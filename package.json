@@ -1,5 +1,5 @@
 {
-  "name": "tease",
+  "name": "@urmzd/tease",
   "version": "0.1.0",
   "description": "Automated project showcase capture — screenshots, GIFs, and videos from web apps, desktop, and terminal",
   "type": "module",

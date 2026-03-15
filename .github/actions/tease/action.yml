@@ -74,7 +74,7 @@ runs:
         if [ -n "$TEASE_OUTPUT" ]; then
           ARGS="$ARGS --output $TEASE_OUTPUT"
         fi
-        npx tease $ARGS
+        npx @urmzd/tease $ARGS
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4

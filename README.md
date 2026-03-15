@@ -12,13 +12,13 @@ Automated project showcase capture -- screenshots, GIFs, and videos from web app
 ## Quick Start
 
 ```bash
-npm install tease
+npm install @urmzd/tease
 ```
 
 Create a `tease.config.ts` in your project root:
 
 ```ts
-import { defineConfig } from "tease";
+import { defineConfig } from "@urmzd/tease";
 
 export default defineConfig({
   server: { command: "npm run dev", url: "http://localhost:3000" },
@@ -34,7 +34,7 @@ export default defineConfig({
 Run it:
 
 ```bash
-npx tease
+npx @urmzd/tease
 ```
 
 ## Configuration
