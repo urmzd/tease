@@ -1,0 +1,5 @@
+node_modules/
+dist/
+tease-output/
+*.tgz
+.DS_Store
