@@ -4,13 +4,14 @@ description = "CLI for teasr screenshot tool"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [[bin]]
 name = "teasr"
 path = "src/main.rs"
 
 [dependencies]
-teasr-core = { path = "../teasr-core" }
+teasr-core = { version = "0.2.0", path = "../teasr-core" }
 clap = { version = "4", features = ["derive"] }
 tokio.workspace = true
 anyhow.workspace = true
