@@ -1,0 +1,66 @@
+name: "tease"
+description: "Capture project showcase assets (screenshots, GIFs, videos)"
+inputs:
+  config:
+    description: "Path to config file"
+    required: false
+  formats:
+    description: "Output formats (comma-separated: png,gif,mp4)"
+    required: false
+  output:
+    description: "Output directory"
+    required: false
+    default: "./tease-output"
+  ollama-model:
+    description: "Ollama vision model (omit to skip AI)"
+    required: false
+  node-version:
+    description: "Node.js version"
+    required: false
+    default: "20"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Install Playwright browsers
+      shell: bash
+      run: npx playwright install --with-deps chromium
+
+    - name: Install Ollama
+      if: inputs.ollama-model != ''
+      shell: bash
+      run: |
+        curl -fsSL https://ollama.com/install.sh | sh
+        ollama serve &
+        sleep 5
+        ollama pull ${{ inputs.ollama-model }}
+
+    - name: Run tease
+      shell: bash
+      run: |
+        ARGS=""
+        if [ -n "${{ inputs.config }}" ]; then
+          ARGS="$ARGS --config ${{ inputs.config }}"
+        fi
+        if [ -n "${{ inputs.formats }}" ]; then
+          ARGS="$ARGS --formats ${{ inputs.formats }}"
+        fi
+        if [ -n "${{ inputs.output }}" ]; then
+          ARGS="$ARGS --output ${{ inputs.output }}"
+        fi
+        npx tease $ARGS
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tease-output
+        path: ${{ inputs.output }}
