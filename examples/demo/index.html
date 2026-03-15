@@ -103,12 +103,11 @@
 </head>
 <body>
   <div class="hero">
-    <h1>tease</h1>
-    <p>Automated screenshots, GIFs, and videos from your web apps, desktop, and terminal.</p>
+    <h1>teasr</h1>
+    <p>Automated screenshots and GIFs from your web apps, desktop, and terminal — configured with TOML, built in Rust.</p>
     <div class="badges">
       <span class="badge badge-purple">PNG</span>
       <span class="badge badge-blue">GIF</span>
-      <span class="badge badge-green">MP4</span>
     </div>
   </div>
 
@@ -116,12 +115,12 @@
     <div class="card">
       <span class="card-icon">&#127760;</span>
       <h3>Web Capture</h3>
-      <p>Navigate pages with Playwright, execute actions, and capture full-page screenshots or video recordings.</p>
+      <p>Drive Chrome via DevTools Protocol, execute actions like click, scroll, and hover, then capture full-page screenshots.</p>
     </div>
     <div class="card">
       <span class="card-icon">&#128187;</span>
       <h3>Screen Capture</h3>
-      <p>Capture desktop windows and native apps. Run setup commands, crop regions, and record screen video.</p>
+      <p>Capture desktop windows and native apps. Select displays, crop regions, and take native screenshots.</p>
     </div>
     <div class="card">
       <span class="card-icon">&#9000;</span>
@@ -132,20 +131,31 @@
 
   <div class="config-section">
     <h2>One config. Three modes.</h2>
-    <pre><span class="kw">import</span> { <span class="fn">defineConfig</span> } <span class="kw">from</span> <span class="str">"tease"</span>;
+    <pre><span class="cm"># teasr.toml</span>
 
-<span class="kw">export default</span> <span class="fn">defineConfig</span>({
-  <span class="cm">// Start your dev server</span>
-  server: { command: <span class="str">"npm run dev"</span>, url: <span class="str">"http://localhost:3000"</span> },
+<span class="cm"># Start your dev server</span>
+<span class="kw">[server]</span>
+command = <span class="str">"npm run dev"</span>
+url     = <span class="str">"http://localhost:3000"</span>
 
-  scenes: [
-    { type: <span class="str">"web"</span>,      url: <span class="str">"/"</span>,              name: <span class="str">"homepage"</span> },
-    { type: <span class="str">"terminal"</span>, command: <span class="str">"npm test"</span>,   name: <span class="str">"tests"</span> },
-    { type: <span class="str">"screen"</span>,   name: <span class="str">"desktop"</span>,        setup: <span class="str">"open MyApp"</span> },
-  ],
+<span class="kw">[output]</span>
+dir     = <span class="str">"./showcase"</span>
+formats = [<span class="str">"png"</span>, <span class="str">"gif"</span>]
 
-  output: { dir: <span class="str">"./showcase"</span>, formats: [<span class="str">"png"</span>, <span class="str">"gif"</span>] },
-});</pre>
+<span class="kw">[[scenes]]</span>
+type = <span class="str">"web"</span>
+url  = <span class="str">"/"</span>
+name = <span class="str">"homepage"</span>
+
+<span class="kw">[[scenes]]</span>
+type    = <span class="str">"terminal"</span>
+command = <span class="str">"npm test"</span>
+name    = <span class="str">"tests"</span>
+theme   = <span class="str">"dracula"</span>
+
+<span class="kw">[[scenes]]</span>
+type = <span class="str">"screen"</span>
+name = <span class="str">"desktop"</span></pre>
   </div>
 </body>
 </html>
