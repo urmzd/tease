@@ -107,4 +107,4 @@ Disable at runtime with `--no-ai`.
 
 ## License
 
-MIT
+Apache-2.0
