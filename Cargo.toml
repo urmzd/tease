@@ -10,7 +10,7 @@ members = [
 version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/urmzd/tease"
+repository = "https://github.com/urmzd/teasr"
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }
