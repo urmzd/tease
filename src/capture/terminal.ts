@@ -221,7 +221,7 @@ export async function captureTerminal(
   try {
     browser = await chromium.launch();
     const page = await browser.newPage();
-    await page.goto(`file://${tmpHtml}`, { waitUntil: "networkidle" });
+    await page.goto(`file://${tmpHtml}`, { waitUntil: "load" });
 
     // Size the viewport to content
     const termEl = page.locator(".terminal");
@@ -256,7 +256,7 @@ export async function captureTerminal(
         },
       });
       const videoPage = await context.newPage();
-      await videoPage.goto(`file://${tmpHtml}`, { waitUntil: "networkidle" });
+      await videoPage.goto(`file://${tmpHtml}`, { waitUntil: "load" });
       await new Promise((r) => setTimeout(r, config.output.videoDuration));
       await videoPage.close();
 

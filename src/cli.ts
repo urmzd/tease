@@ -11,8 +11,16 @@ cli
   .option("-o, --output <dir>", "Output directory")
   .option("--formats <formats>", "Output formats (comma-separated: png,gif,mp4)")
   .option("--no-ai", "Disable Ollama AI mode")
+  .option("--timeout <ms>", "Global timeout in milliseconds (default: 30000)")
   .option("--verbose", "Enable verbose logging")
   .action(async (_, options) => {
+    const timeout = Number(options.timeout) || 30_000;
+    const timer = setTimeout(() => {
+      log.error(`Global timeout of ${timeout}ms exceeded — aborting.`);
+      process.exit(1);
+    }, timeout);
+    timer.unref();
+
     try {
       if (options.verbose) {
         setVerbose(true);
