@@ -1,4 +1,4 @@
-name: "tease"
+name: "teasr"
 description: "Capture project showcase assets — screenshots, GIFs, and videos from web apps, desktop, and terminal"
 author: "urmzd"
 
@@ -8,7 +8,7 @@ branding:
 
 inputs:
   config:
-    description: "Path to config file"
+    description: "Path to teasr.toml config file"
     required: false
   formats:
     description: "Output formats (comma-separated: png,gif,mp4)"
@@ -16,14 +16,11 @@ inputs:
   output:
     description: "Output directory"
     required: false
-    default: "./tease-output"
-  ollama-model:
-    description: "Ollama vision model (omit to skip AI)"
+    default: "./teasr-output"
+  version:
+    description: "Teasr version to download (default: latest)"
     required: false
-  node-version:
-    description: "Node.js version"
-    required: false
-    default: "20"
+    default: "latest"
 
 outputs:
   output-dir:
@@ -33,51 +30,70 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ inputs.node-version }}
-
-    - name: Install dependencies
+    - name: Determine platform
+      id: platform
       shell: bash
-      run: npm ci
-
-    - name: Install Playwright browsers
-      shell: bash
-      run: npx playwright install --with-deps chromium
-
-    - name: Install Ollama
-      if: inputs.ollama-model != ''
-      shell: bash
-      env:
-        OLLAMA_MODEL: ${{ inputs.ollama-model }}
       run: |
-        curl -fsSL https://ollama.com/install.sh | sh
-        ollama serve &
-        sleep 5
-        ollama pull "$OLLAMA_MODEL"
+        case "$RUNNER_OS-$RUNNER_ARCH" in
+          Linux-X64)   echo "target=x86_64-unknown-linux-gnu" >> "$GITHUB_OUTPUT" ; echo "ext=tar.gz" >> "$GITHUB_OUTPUT" ;;
+          Linux-ARM64) echo "target=aarch64-unknown-linux-gnu" >> "$GITHUB_OUTPUT" ; echo "ext=tar.gz" >> "$GITHUB_OUTPUT" ;;
+          macOS-X64)   echo "target=x86_64-apple-darwin" >> "$GITHUB_OUTPUT" ; echo "ext=tar.gz" >> "$GITHUB_OUTPUT" ;;
+          macOS-ARM64) echo "target=aarch64-apple-darwin" >> "$GITHUB_OUTPUT" ; echo "ext=tar.gz" >> "$GITHUB_OUTPUT" ;;
+          Windows-X64) echo "target=x86_64-pc-windows-msvc" >> "$GITHUB_OUTPUT" ; echo "ext=zip" >> "$GITHUB_OUTPUT" ;;
+          *)           echo "::error::Unsupported platform: $RUNNER_OS-$RUNNER_ARCH" ; exit 1 ;;
+        esac
 
-    - name: Run tease
+    - name: Download teasr binary
       shell: bash
       env:
-        TEASE_CONFIG: ${{ inputs.config }}
-        TEASE_FORMATS: ${{ inputs.formats }}
-        TEASE_OUTPUT: ${{ inputs.output }}
+        GH_TOKEN: ${{ github.token }}
+        VERSION: ${{ inputs.version }}
+        TARGET: ${{ steps.platform.outputs.target }}
+        EXT: ${{ steps.platform.outputs.ext }}
+      run: |
+        REPO="${{ github.repository }}"
+        if [ "$VERSION" = "latest" ]; then
+          TAG=$(gh api "repos/$REPO/releases/latest" --jq .tag_name)
+        else
+          TAG="v$VERSION"
+        fi
+        ASSET="teasr-${TARGET}.${EXT}"
+        gh release download "$TAG" --repo "$REPO" --pattern "$ASSET"
+        if [ "$EXT" = "tar.gz" ]; then
+          tar xzf "$ASSET"
+          chmod +x teasr
+          sudo mv teasr /usr/local/bin/
+        else
+          7z x "$ASSET"
+          mv teasr.exe /usr/local/bin/
+        fi
+
+    - name: Install Chrome
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
+
+    - name: Run teasr
+      shell: bash
+      env:
+        TEASR_CONFIG: ${{ inputs.config }}
+        TEASR_FORMATS: ${{ inputs.formats }}
+        TEASR_OUTPUT: ${{ inputs.output }}
       run: |
         ARGS=""
-        if [ -n "$TEASE_CONFIG" ]; then
-          ARGS="$ARGS --config $TEASE_CONFIG"
+        if [ -n "$TEASR_CONFIG" ]; then
+          ARGS="$ARGS --config $TEASR_CONFIG"
         fi
-        if [ -n "$TEASE_FORMATS" ]; then
-          ARGS="$ARGS --formats $TEASE_FORMATS"
+        if [ -n "$TEASR_FORMATS" ]; then
+          ARGS="$ARGS --formats $TEASR_FORMATS"
         fi
-        if [ -n "$TEASE_OUTPUT" ]; then
-          ARGS="$ARGS --output $TEASE_OUTPUT"
+        if [ -n "$TEASR_OUTPUT" ]; then
+          ARGS="$ARGS --output $TEASR_OUTPUT"
         fi
-        npx @urmzd/tease $ARGS
+        teasr $ARGS
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: tease-output
+        name: teasr-output
         path: ${{ inputs.output }}

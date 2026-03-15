@@ -12,19 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build teasr
+        run: cargo build --release -p teasr-cli
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
         with:
-          node-version: 20
-          cache: npm
+          chrome-version: stable
 
-      - run: npm ci
-      - run: npm run build
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run tease on itself
-        run: node dist/cli.js --verbose --timeout 60000
+      - name: Run teasr on itself
+        run: cargo run --release -p teasr-cli -- --verbose --timeout 60000
 
       - name: Upload showcase
         uses: actions/upload-artifact@v4

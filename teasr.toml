@@ -1,0 +1,27 @@
+[server]
+command = "npx serve examples/demo --listen 3123"
+url = "http://localhost:3123"
+timeout = 10000
+
+[output]
+dir = "./showcase"
+formats = ["png"]
+
+[[scenes]]
+type = "web"
+url = "/"
+name = "demo-landing"
+
+[[scenes]]
+type = "terminal"
+command = "tease --help"
+name = "cli-help"
+theme = "dracula"
+cols = 90
+
+[[scenes]]
+type = "terminal"
+command = "echo -e '\\033[1;32m✔ tease\\033[0m captured \\033[1;36m3 scenes\\033[0m in \\033[33m2.1s\\033[0m'"
+name = "colorful-modes"
+theme = "dracula"
+cols = 60

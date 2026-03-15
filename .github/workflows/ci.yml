@@ -12,11 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          node-version: 20
-          cache: npm
+          components: clippy
 
-      - run: npm ci
-      - run: npm run build
-      - run: npm run typecheck
+      - uses: Swatinem/rust-cache@v2
+
+      - run: cargo build --workspace
+      - run: cargo clippy --workspace -- -D warnings
+      - run: cargo test --workspace

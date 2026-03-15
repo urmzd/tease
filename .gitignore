@@ -1,6 +1,7 @@
-node_modules/
-dist/
-tease-output/
+teasr-output/
 showcase/
-*.tgz
 .DS_Store
+node_modules/
+
+# Rust
+target/

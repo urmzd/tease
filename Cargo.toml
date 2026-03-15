@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/teasr-term-render",
+    "crates/teasr-core",
+    "crates/teasr-cli",
+]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/urmzd/tease"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
