@@ -7,7 +7,7 @@ The `teasr` binary. A thin CLI wrapper around `teasr-core` using clap derive.
 **Shell installer:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/urmzd/tease/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/urmzd/teasr/main/install.sh | bash
 ```
 
 **Cargo:**

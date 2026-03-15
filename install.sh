@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="urmzd/tease"
+REPO="urmzd/teasr"
 BINARY="teasr"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 

@@ -17,7 +17,7 @@ Automated project showcase capture — screenshots and GIFs from web apps, deskt
 **Shell installer (recommended):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/urmzd/tease/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/urmzd/teasr/main/install.sh | bash
 ```
 
 **Cargo:**
@@ -205,7 +205,7 @@ Options:
 The GitHub Action downloads the appropriate pre-built binary, installs Chrome, runs teasr, and uploads output as a build artifact.
 
 ```yaml
-- uses: urmzd/tease/.github/actions/tease@main
+- uses: urmzd/teasr/.github/actions/teasr@main
   with:
     config: "teasr.toml"     # optional, auto-discovered if omitted
     formats: "png"            # optional, overrides config
