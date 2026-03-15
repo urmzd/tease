@@ -79,7 +79,7 @@ Set formats globally via `output.formats` or per-scene via `formats`.
 ## GitHub Action
 
 ```yaml
-- uses: ./.github/actions/strip-tease
+- uses: ./.github/actions/tease
   with:
     formats: "png,gif"
     output: "./showcase"
