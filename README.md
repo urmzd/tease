@@ -1,109 +1,235 @@
-# tease
+# teasr
 
-Automated project showcase capture -- screenshots, GIFs, and videos from web apps, desktop, and terminal.
+Automated project showcase capture — screenshots and GIFs from web apps, desktop, and terminal. Single binary, no runtime dependencies.
 
-## Features
+## Why teasr
 
-- **Web capture** -- navigate to URLs via Playwright, run actions (click, scroll, hover), and capture the results.
-- **Screen capture** -- grab your desktop or a specific display/region, with optional setup commands and delay.
-- **Terminal capture** -- record CLI output from any command, with configurable themes, columns, and line limits.
-- **AI mode** -- send captures to a local Ollama vision model for automated analysis and suggestions.
+| | teasr | Node/Playwright approach |
+|---|---|---|
+| Runtime | Single binary | Node.js + npm install |
+| Terminal render | Built-in (ANSI → SVG → PNG) | External tools |
+| GIF encoding | gifski (pure Rust) | FFmpeg or ImageMagick |
+| Config | `teasr.toml` | JS/TS config file |
+| Server cleanup | Process group kill | Manual or best-effort |
+
+## Installation
+
+**Shell installer (recommended):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/urmzd/tease/main/install.sh | bash
+```
+
+**Cargo:**
+
+```bash
+cargo install teasr-cli
+```
+
+**GitHub Action:** see [CI Integration](#ci-integration) below.
 
 ## Quick Start
 
+Create `teasr.toml` in your project root:
+
+```toml
+[server]
+command = "npx serve examples/demo --listen 3123"
+url = "http://localhost:3123"
+timeout = 10000
+
+[output]
+dir = "./showcase"
+formats = ["png"]
+
+[[scenes]]
+type = "web"
+url = "/"
+name = "demo-landing"
+
+[[scenes]]
+type = "terminal"
+command = "teasr --help"
+name = "cli-help"
+theme = "dracula"
+cols = 90
+```
+
+Then run:
+
 ```bash
-npm install @urmzd/tease
+teasr
 ```
 
-Create a `tease.config.ts` in your project root:
+Output files are written to `./showcase/`.
 
-```ts
-import { defineConfig } from "@urmzd/tease";
+## Capture Modes
 
-export default defineConfig({
-  server: { command: "npm run dev", url: "http://localhost:3000" },
-  scenes: [
-    { type: "web", url: "/", name: "homepage" },
-    { type: "screen", name: "native-app", setup: "open MyApp.app", delay: 3000 },
-    { type: "terminal", command: "npm test", name: "tests", theme: "dracula" },
-  ],
-  output: { dir: "./showcase", formats: ["png", "mp4"] },
-});
+### Web
+
+Navigates to a URL via Chrome DevTools Protocol (chromiumoxide). Requires Chrome or Chromium to be installed.
+
+```toml
+[[scenes]]
+type = "web"
+url = "/dashboard"
+name = "dashboard"
+
+# Optional
+viewport = { width = 1440, height = 900 }
+formats = ["png", "gif"]
+
+[[scenes.actions]]
+type = "click"
+selector = "#open-modal"
+
+[[scenes.actions]]
+type = "screenshot"
+name = "modal-open"
 ```
 
-Run it:
+**Web scene fields:**
 
-```bash
-npx @urmzd/tease
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `url` | string | required | Path (joined to `server.url`) or full URL |
+| `name` | string | url value | Output filename base |
+| `viewport` | object | `1280x720` | `{ width, height }` |
+| `formats` | array | `output.formats` | Per-scene format override |
+| `actions` | array | — | Sequence of interactions before capture |
+
+**Action types:** `click`, `scroll-to`, `hover`, `wait`, `screenshot`
+
+### Terminal
+
+Runs a command in a PTY, captures ANSI output, and renders it to a styled PNG with terminal chrome (title bar, traffic light buttons).
+
+```toml
+[[scenes]]
+type = "terminal"
+command = "cargo test 2>&1"
+name = "test-output"
+theme = "dracula"
+cols = 100
+maxLines = 40
 ```
 
-## Configuration
+**Terminal scene fields:**
 
-Each entry in `scenes` is one of three types:
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `command` | string | required | Command to run |
+| `name` | string | command value | Output filename base |
+| `theme` | string | `"dracula"` | `"dracula"` or `"monokai"` |
+| `cols` | integer | `80` | Terminal width in columns |
+| `maxLines` | integer | — | Truncate output after N lines |
+| `formats` | array | `output.formats` | Per-scene format override |
 
-| Type       | Key fields                                      |
-|------------|--------------------------------------------------|
-| `web`      | `url`, `viewport`, `actions`, `formats`          |
-| `screen`   | `display`, `region`, `setup`, `delay`, `formats` |
-| `terminal` | `command`, `theme`, `cols`, `maxLines`, `formats` |
+### Screen
 
-All scenes accept `name` and `formats`. The top-level `output.formats` serves as the default.
+Captures a display or region using native screen capture (xcap).
 
-A `server` block (optional) starts a dev server before capture and waits for it to be ready.
+```toml
+[[scenes]]
+type = "screen"
+name = "native-app"
+display = 0
+setup = "open MyApp.app"
+delay = 2000
+```
 
-## CLI Usage
+**Screen scene fields:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | string | `"screen"` | Output filename base |
+| `display` | integer | primary | Display index |
+| `region` | object | full display | `{ x, y, width, height }` |
+| `setup` | string | — | Shell command run before capture |
+| `delay` | integer | — | Milliseconds to wait after setup |
+| `formats` | array | `output.formats` | Per-scene format override |
+
+## Configuration Reference
+
+### `[server]`
+
+Optional. Starts a process before capture and health-polls it until ready. The process group is killed on exit — no orphaned processes.
+
+```toml
+[server]
+command = "npm run dev"
+url = "http://localhost:3000"
+timeout = 10000          # ms to wait for server to be ready (default: 10000)
+```
+
+### `[output]`
+
+```toml
+[output]
+dir = "./showcase"       # default: "./teasr-output"
+formats = ["png"]        # default: ["png"]. Options: "png", "gif"
+```
+
+### `[[scenes]]`
+
+Each `[[scenes]]` entry is one of the three types described above. The `type` field is required and must be `"web"`, `"terminal"`, or `"screen"`.
+
+Config file discovery walks up from the current directory to the filesystem root, so running `teasr` from any subdirectory of your project will find `teasr.toml` at the root.
+
+## CLI Reference
 
 ```
-tease [config]
+teasr [OPTIONS]
 
 Options:
-  -c, --config <path>      Path to config file
-  -o, --output <dir>       Output directory
-  --formats <formats>      Output formats (comma-separated: png,gif,mp4)
-  --no-ai                  Disable Ollama AI mode
-  --verbose                Enable verbose logging
-  -h, --help               Display help
-  -v, --version            Display version
+  -c, --config <PATH>      Path to teasr.toml (default: auto-discover)
+  -o, --output <DIR>       Output directory (overrides config)
+      --formats <FMT,...>  Output formats: png, gif (overrides config)
+      --verbose            Enable debug logging
+      --timeout <MS>       Global timeout in ms [default: 60000]
+  -h, --help               Print help
+  -V, --version            Print version
 ```
+
+`--formats` accepts comma-separated values: `--formats png,gif`
 
 ## Output Formats
 
-| Format | Description              |
-|--------|--------------------------|
-| `png`  | Static screenshot        |
-| `gif`  | Animated capture         |
-| `mp4`  | Full video recording     |
+| Format | Notes |
+|--------|-------|
+| `png` | Lossless screenshot. Native, no external tools required. |
+| `gif` | Single-frame GIF encoded with gifski (pure Rust). |
 
-Set formats globally via `output.formats` or per-scene via `formats`.
+## CI Integration
 
-## GitHub Action
+The GitHub Action downloads the appropriate pre-built binary, installs Chrome, runs teasr, and uploads output as a build artifact.
 
 ```yaml
-- uses: ./.github/actions/tease
+- uses: urmzd/tease/.github/actions/tease@main
   with:
-    formats: "png,gif"
-    output: "./showcase"
-    ollama-model: "llama3.2-vision"  # omit to skip AI
+    config: "teasr.toml"     # optional, auto-discovered if omitted
+    formats: "png"            # optional, overrides config
+    output: "./showcase"      # optional, default: ./teasr-output
+    version: "latest"         # optional, pin to e.g. "0.2.0"
 ```
 
-Captured assets are automatically uploaded as build artifacts.
+**Outputs:**
 
-## Ollama AI Mode
+| Output | Description |
+|--------|-------------|
+| `output-dir` | Path to the directory containing captured assets |
 
-When an `ollama` block is present in your config, tease sends each capture to a local Ollama vision model for analysis.
+**Supported runners:** `ubuntu-*`, `macos-*`, `windows-*` on x64 and ARM64.
 
-```ts
-export default defineConfig({
-  scenes: [/* ... */],
-  ollama: {
-    model: "llama3.2-vision",
-    endpoint: "http://localhost:11434", // default
-    prompt: "Describe this UI screenshot.",
-  },
-});
-```
+## Workspace
 
-Disable at runtime with `--no-ai`.
+teasr is a Cargo workspace with three crates:
+
+| Crate | Description |
+|-------|-------------|
+| [`teasr-cli`](crates/teasr-cli) | CLI entry point (`teasr` binary) |
+| [`teasr-core`](crates/teasr-core) | Capture, config, and orchestration library |
+| [`teasr-term-render`](crates/teasr-term-render) | ANSI → SVG → PNG rendering library |
 
 ## License
 
