@@ -1,14 +1,33 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.sr.outputs.released }}
+      version: ${{ steps.sr.outputs.version }}
+      tag: ${{ steps.sr.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: urmzd/semantic-release@v3
+        id: sr
+        with:
+          command: release
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
   build:
+    needs: release
+    if: needs.release.outputs.released == 'true'
     strategy:
       matrix:
         include:
@@ -27,6 +46,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -61,8 +82,7 @@ jobs:
           cd ../../..
 
       - name: Upload release asset
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            teasr-*.tar.gz
-            teasr-*.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ needs.release.outputs.tag }} teasr-*.tar.gz teasr-*.zip 2>/dev/null || true
