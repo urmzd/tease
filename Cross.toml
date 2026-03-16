@@ -1,0 +1,5 @@
+[target.aarch64-unknown-linux-gnu]
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get install -y libwayland-dev:$CROSS_DEB_ARCH libxcb1-dev:$CROSS_DEB_ARCH libxcb-randr0-dev:$CROSS_DEB_ARCH libxcb-shm0-dev:$CROSS_DEB_ARCH libxcb-xfixes0-dev:$CROSS_DEB_ARCH libxkbcommon-dev:$CROSS_DEB_ARCH libdbus-1-dev:$CROSS_DEB_ARCH libpipewire-0.3-dev:$CROSS_DEB_ARCH libegl-dev:$CROSS_DEB_ARCH libgl-dev:$CROSS_DEB_ARCH libgbm-dev:$CROSS_DEB_ARCH libvulkan-dev:$CROSS_DEB_ARCH"
+]
