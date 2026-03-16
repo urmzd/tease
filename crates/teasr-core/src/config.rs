@@ -49,7 +49,15 @@ mod tests {
             r#"
 [[scenes]]
 type = "terminal"
-command = "echo hello"
+name = "demo"
+
+[[scenes.steps]]
+type = "type"
+text = "echo hello"
+
+[[scenes.steps]]
+type = "key"
+key = "enter"
 "#,
         );
         let config = load_config(f.path()).unwrap();
@@ -77,10 +85,21 @@ name = "home"
 
 [[scenes]]
 type = "terminal"
-command = "ls -la"
 name = "listing"
 theme = "dracula"
 cols = 80
+
+[[scenes.steps]]
+type = "type"
+text = "ls -la"
+
+[[scenes.steps]]
+type = "key"
+key = "enter"
+
+[[scenes.steps]]
+type = "wait"
+duration = 500
 "#,
         );
         let config = load_config(f.path()).unwrap();

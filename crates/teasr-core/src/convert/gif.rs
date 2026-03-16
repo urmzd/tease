@@ -1,14 +1,18 @@
 use anyhow::{Context, Result};
 use std::path::Path;
 
-/// Convert a single PNG to a single-frame GIF using gifski.
-pub fn png_to_gif(png_path: &Path, gif_path: &Path) -> Result<()> {
-    let png_data = std::fs::read(png_path)
-        .with_context(|| format!("failed to read {}", png_path.display()))?;
+use crate::capture::terminal::CapturedFrame;
 
-    let img = image::load_from_memory(&png_data).context("failed to decode PNG")?;
-    let rgba = img.to_rgba8();
-    let (width, height) = rgba.dimensions();
+/// Assemble multiple captured frames into an animated GIF.
+pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path) -> Result<()> {
+    if frames.is_empty() {
+        anyhow::bail!("no frames to encode");
+    }
+
+    // Decode first frame to get dimensions
+    let first_img = image::load_from_memory(&frames[0].png_data).context("failed to decode first frame")?;
+    let first_rgba = first_img.to_rgba8();
+    let (width, height) = first_rgba.dimensions();
 
     let (collector, writer) = gifski::new(gifski::Settings {
         width: Some(width),
@@ -26,15 +30,20 @@ pub fn png_to_gif(png_path: &Path, gif_path: &Path) -> Result<()> {
         Ok(())
     });
 
-    // Add single frame
-    let pixels: Vec<rgb::RGBA8> = rgba
-        .pixels()
-        .map(|p| rgb::RGBA8::new(p[0], p[1], p[2], p[3]))
-        .collect();
-    let frame = imgref::ImgVec::new(pixels, width as usize, height as usize);
-    collector
-        .add_frame_rgba(0, frame, 0.0)
-        .context("failed to add frame")?;
+    let mut timestamp = 0.0_f64;
+    for (i, frame) in frames.iter().enumerate() {
+        let img = image::load_from_memory(&frame.png_data).context("failed to decode frame PNG")?;
+        let rgba = img.to_rgba8();
+        let pixels: Vec<rgb::RGBA8> = rgba
+            .pixels()
+            .map(|p| rgb::RGBA8::new(p[0], p[1], p[2], p[3]))
+            .collect();
+        let img_frame = imgref::ImgVec::new(pixels, width as usize, height as usize);
+        collector
+            .add_frame_rgba(i, img_frame, timestamp)
+            .with_context(|| format!("failed to add frame {i}"))?;
+        timestamp += frame.duration_ms as f64 / 1000.0;
+    }
     drop(collector);
 
     write_handle

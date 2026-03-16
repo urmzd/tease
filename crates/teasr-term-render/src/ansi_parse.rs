@@ -86,7 +86,7 @@ impl Cell {
 }
 
 /// A grid of cells representing terminal output.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CellGrid {
     pub cols: usize,
     pub rows: Vec<Vec<Cell>>,
@@ -107,6 +107,7 @@ impl CellGrid {
 
 struct GridBuilder {
     cols: usize,
+    max_rows: Option<usize>,
     rows: Vec<Vec<Cell>>,
     cursor_row: usize,
     cursor_col: usize,
@@ -122,7 +123,26 @@ impl GridBuilder {
     fn new(cols: usize) -> Self {
         Self {
             cols,
+            max_rows: None,
             rows: vec![vec![Cell::default(); cols]],
+            cursor_row: 0,
+            cursor_col: 0,
+            fg: CellColor::Default,
+            bg: CellColor::Default,
+            bold: false,
+            italic: false,
+            underline: false,
+            inverse: false,
+        }
+    }
+
+    fn new_fixed(cols: usize, max_rows: usize) -> Self {
+        let mut rows = Vec::with_capacity(max_rows);
+        rows.push(vec![Cell::default(); cols]);
+        Self {
+            cols,
+            max_rows: Some(max_rows),
+            rows,
             cursor_row: 0,
             cursor_col: 0,
             fg: CellColor::Default,
@@ -137,6 +157,13 @@ impl GridBuilder {
     fn ensure_row(&mut self, row: usize) {
         while self.rows.len() <= row {
             self.rows.push(vec![Cell::default(); self.cols]);
+        }
+        // Scroll when exceeding max_rows
+        if let Some(max) = self.max_rows {
+            while self.rows.len() > max {
+                self.rows.remove(0);
+                self.cursor_row = self.cursor_row.saturating_sub(1);
+            }
         }
     }
 
@@ -372,6 +399,37 @@ fn ansi_256_to_color(idx: u8) -> CellColor {
     }
 }
 
+/// A snapshotable terminal emulator for incremental byte feeding.
+pub struct TerminalEmulator {
+    parser: Parser<CharAcc>,
+    builder: GridBuilder,
+}
+
+impl TerminalEmulator {
+    /// Create a fixed-size terminal emulator.
+    pub fn new(cols: usize, rows: usize) -> Self {
+        Self {
+            parser: Parser::<CharAcc>::new(),
+            builder: GridBuilder::new_fixed(cols, rows),
+        }
+    }
+
+    /// Feed raw bytes into the emulator incrementally.
+    pub fn feed(&mut self, data: &[u8]) {
+        for &byte in data {
+            self.parser.advance(&mut self.builder, byte);
+        }
+    }
+
+    /// Snapshot the current visible grid.
+    pub fn snapshot(&self) -> CellGrid {
+        CellGrid {
+            cols: self.builder.cols,
+            rows: self.builder.rows.clone(),
+        }
+    }
+}
+
 /// Parse raw ANSI bytes into a cell grid.
 pub fn parse(input: &[u8], cols: usize) -> CellGrid {
     let mut parser = Parser::<CharAcc>::new();
@@ -438,5 +496,44 @@ mod tests {
         let input = b"\x1b[38;2;100;200;50mcolor\x1b[0m";
         let grid = parse(input, 80);
         assert_eq!(grid.rows[0][0].fg, CellColor::Rgb(100, 200, 50));
+    }
+
+    #[test]
+    fn emulator_incremental_feed() {
+        let mut emu = TerminalEmulator::new(80, 24);
+        emu.feed(b"Hello");
+        let grid = emu.snapshot();
+        let text: String = grid.rows[0].iter().take(5).map(|c| c.ch).collect();
+        assert_eq!(text, "Hello");
+
+        emu.feed(b", world!");
+        let grid = emu.snapshot();
+        let text: String = grid.rows[0].iter().take(13).map(|c| c.ch).collect();
+        assert_eq!(text, "Hello, world!");
+    }
+
+    #[test]
+    fn emulator_scrolling() {
+        let mut emu = TerminalEmulator::new(80, 3);
+        emu.feed(b"line1\nline2\nline3\nline4\nline5");
+        let grid = emu.snapshot();
+        // Should have scrolled: only 3 rows visible
+        assert_eq!(grid.rows.len(), 3);
+        let first: String = grid.rows[0].iter().take(5).map(|c| c.ch).collect();
+        let last: String = grid.rows[2].iter().take(5).map(|c| c.ch).collect();
+        assert_eq!(first, "line3");
+        assert_eq!(last, "line5");
+    }
+
+    #[test]
+    fn emulator_snapshot_is_independent() {
+        let mut emu = TerminalEmulator::new(80, 24);
+        emu.feed(b"before");
+        let snap1 = emu.snapshot();
+        emu.feed(b"\nafter");
+        let snap2 = emu.snapshot();
+        // snap1 should not be affected by subsequent feed
+        assert_eq!(snap1.rows.len(), 1);
+        assert!(snap2.rows.len() >= 2);
     }
 }

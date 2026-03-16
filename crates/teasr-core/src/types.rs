@@ -9,6 +9,21 @@ pub enum OutputFormat {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum TerminalStep {
+    Type {
+        text: String,
+        speed: Option<u64>,
+    },
+    Key {
+        key: String,
+    },
+    Wait {
+        duration: Option<u64>,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ViewportConfig {
     #[serde(default = "default_width")]
     pub width: u32,
@@ -78,13 +93,13 @@ pub enum SceneConfig {
         delay: Option<u64>,
     },
     Terminal {
-        command: String,
         name: Option<String>,
         formats: Option<Vec<OutputFormat>>,
         theme: Option<String>,
-        #[serde(rename = "maxLines")]
-        max_lines: Option<usize>,
         cols: Option<usize>,
+        rows: Option<usize>,
+        steps: Vec<TerminalStep>,
+        frame_duration: Option<u64>,
     },
 }
 
@@ -95,8 +110,8 @@ impl SceneConfig {
                 name.as_deref().unwrap_or(url.as_str())
             }
             SceneConfig::Screen { name, .. } => name.as_deref().unwrap_or("screen"),
-            SceneConfig::Terminal { name, command, .. } => {
-                name.as_deref().unwrap_or(command.as_str())
+            SceneConfig::Terminal { name, .. } => {
+                name.as_deref().unwrap_or("recording")
             }
         }
     }

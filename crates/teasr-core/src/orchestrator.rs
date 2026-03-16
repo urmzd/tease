@@ -31,23 +31,68 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
 
         let mut files = Vec::new();
 
-        for format in formats {
-            match format {
-                OutputFormat::Png => {
-                    let path = output_dir.join(format!("{scene_name}.png"));
-                    capture_scene(scene, &path, config).await?;
-                    files.push(path.display().to_string());
+        match scene {
+            SceneConfig::Terminal {
+                steps,
+                theme,
+                cols,
+                rows,
+                name,
+                frame_duration,
+                ..
+            } => {
+                let has_gif = formats.iter().any(|f| matches!(f, OutputFormat::Gif));
+                let has_png = formats.iter().any(|f| matches!(f, OutputFormat::Png));
+
+                if !has_gif && !has_png {
+                    warn!("terminal scene '{}' has no GIF or PNG format", scene_name);
                 }
-                OutputFormat::Gif => {
-                    warn!("GIF capture requires frame sequence - using single-frame GIF");
-                    let png_path = output_dir.join(format!("{scene_name}.png"));
-                    capture_scene(scene, &png_path, config).await?;
+
+                let theme_name = theme.as_deref().unwrap_or("dracula");
+                let cols = cols.unwrap_or(80);
+                let rows = rows.unwrap_or(24);
+                let fd = frame_duration.unwrap_or(100);
+
+                info!("recording session: {} steps, {}x{}", steps.len(), cols, rows);
+
+                let captured_frames = capture::terminal::capture_session(
+                    cols,
+                    rows,
+                    theme_name,
+                    name.as_deref(),
+                    steps,
+                    fd,
+                )?;
+
+                info!("captured {} frames", captured_frames.len());
+
+                if has_gif && !captured_frames.is_empty() {
                     let gif_path = output_dir.join(format!("{scene_name}.gif"));
-                    crate::convert::gif::png_to_gif(&png_path, &gif_path)?;
+                    crate::convert::gif::frames_to_gif(&captured_frames, &gif_path)?;
                     files.push(gif_path.display().to_string());
                 }
-                OutputFormat::Mp4 => {
-                    warn!("MP4 output requires ffmpeg in PATH - skipping for now");
+
+                if has_png && !captured_frames.is_empty() {
+                    let png_path = output_dir.join(format!("{scene_name}.png"));
+                    capture::terminal::write_last_frame_png(&captured_frames, &png_path)?;
+                    files.push(png_path.display().to_string());
+                }
+            }
+            _ => {
+                for format in formats {
+                    match format {
+                        OutputFormat::Png => {
+                            let path = output_dir.join(format!("{scene_name}.png"));
+                            capture_scene(scene, &path, config).await?;
+                            files.push(path.display().to_string());
+                        }
+                        OutputFormat::Gif => {
+                            warn!("GIF output for non-terminal scenes not yet supported");
+                        }
+                        OutputFormat::Mp4 => {
+                            warn!("MP4 output requires ffmpeg in PATH - skipping for now");
+                        }
+                    }
                 }
             }
         }
@@ -113,22 +158,8 @@ async fn capture_scene(
             }
             capture::screen::capture(*display, region.as_ref(), output_path)
         }
-        SceneConfig::Terminal {
-            command,
-            theme,
-            cols,
-            name,
-            ..
-        } => {
-            let theme = theme.as_deref().unwrap_or("dracula");
-            let cols = cols.unwrap_or(80);
-            capture::terminal::capture(
-                command,
-                cols,
-                theme,
-                name.as_deref(),
-                output_path,
-            )
+        SceneConfig::Terminal { .. } => {
+            unreachable!("terminal scenes are handled directly in run()")
         }
     }
 }

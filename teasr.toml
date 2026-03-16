@@ -14,14 +14,44 @@ name = "demo-landing"
 
 [[scenes]]
 type = "terminal"
-command = "teasr --help"
 name = "cli-help"
 theme = "dracula"
 cols = 90
+rows = 24
+formats = ["gif", "png"]
+frame_duration = 80
+
+[[scenes.steps]]
+type = "type"
+text = "teasr --help"
+speed = 50
+
+[[scenes.steps]]
+type = "key"
+key = "enter"
+
+[[scenes.steps]]
+type = "wait"
+duration = 2000
 
 [[scenes]]
 type = "terminal"
-command = "echo -e '\\033[1;32m✔ teasr\\033[0m captured \\033[1;36m3 scenes\\033[0m in \\033[33m2.1s\\033[0m'"
 name = "colorful-modes"
 theme = "dracula"
 cols = 60
+rows = 10
+formats = ["gif", "png"]
+frame_duration = 80
+
+[[scenes.steps]]
+type = "type"
+text = "echo -e '\\033[1;32m✔ teasr\\033[0m captured \\033[1;36m3 scenes\\033[0m in \\033[33m2.1s\\033[0m'"
+speed = 30
+
+[[scenes.steps]]
+type = "key"
+key = "enter"
+
+[[scenes.steps]]
+type = "wait"
+duration = 1500
