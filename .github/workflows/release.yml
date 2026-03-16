@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: urmzd/semantic-release@v3
+      - uses: urmzd/semantic-release@v1
         id: sr
         with:
           command: release
