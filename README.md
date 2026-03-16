@@ -15,6 +15,25 @@
   <a href="https://github.com/urmzd/teasr/actions/workflows/ci.yml"><img src="https://github.com/urmzd/teasr/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
+## Showcase
+
+<table>
+  <tr>
+    <td align="center"><strong>CLI Help</strong></td>
+    <td align="center"><strong>Colorful Output</strong></td>
+  </tr>
+  <tr>
+    <td><img src="showcase/cli-help.gif" alt="CLI help" width="450"></td>
+    <td><img src="showcase/colorful-modes.gif" alt="Colorful terminal modes" width="450"></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><strong>Web Capture</strong></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="showcase/demo-landing.png" alt="Demo landing page" width="600"></td>
+  </tr>
+</table>
+
 ## Why teasr
 
 | | teasr | Node/Playwright approach |
@@ -62,10 +81,25 @@ name = "demo-landing"
 
 [[scenes]]
 type = "terminal"
-command = "teasr --help"
 name = "cli-help"
 theme = "dracula"
 cols = 90
+rows = 24
+formats = ["gif", "png"]
+frame_duration = 80
+
+[[scenes.steps]]
+type = "type"
+text = "teasr --help"
+speed = 50
+
+[[scenes.steps]]
+type = "key"
+key = "enter"
+
+[[scenes.steps]]
+type = "wait"
+duration = 2000
 ```
 
 Then run:
@@ -115,28 +149,51 @@ name = "modal-open"
 
 ### Terminal
 
-Runs a command in a PTY, captures ANSI output, and renders it to a styled PNG with terminal chrome (title bar, traffic light buttons).
+Scripts an interactive PTY session using steps (type, key, wait), captures frames at each step, and renders them as animated GIFs or PNGs with terminal chrome (title bar, traffic light buttons).
 
 ```toml
 [[scenes]]
 type = "terminal"
-command = "cargo test 2>&1"
 name = "test-output"
 theme = "dracula"
 cols = 100
-maxLines = 40
+rows = 24
+formats = ["gif", "png"]
+frame_duration = 80
+
+[[scenes.steps]]
+type = "type"
+text = "cargo test 2>&1"
+speed = 50
+
+[[scenes.steps]]
+type = "key"
+key = "enter"
+
+[[scenes.steps]]
+type = "wait"
+duration = 2000
 ```
 
 **Terminal scene fields:**
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `command` | string | required | Command to run |
-| `name` | string | command value | Output filename base |
+| `name` | string | required | Output filename base |
 | `theme` | string | `"dracula"` | `"dracula"` or `"monokai"` |
 | `cols` | integer | `80` | Terminal width in columns |
-| `maxLines` | integer | — | Truncate output after N lines |
+| `rows` | integer | `24` | Terminal height in rows |
+| `steps` | array | required | Sequence of steps to record |
+| `frame_duration` | integer | `80` | Milliseconds per frame in GIF output |
 | `formats` | array | `output.formats` | Per-scene format override |
+
+**Step types:**
+
+| Type | Fields | Description |
+|------|--------|-------------|
+| `type` | `text`, `speed` (ms per char, optional) | Type text into the terminal |
+| `key` | `key` (e.g. `"enter"`) | Press a key |
+| `wait` | `duration` (ms, optional) | Wait before next step |
 
 ### Screen
 
@@ -211,7 +268,7 @@ Options:
 | Format | Notes |
 |--------|-------|
 | `png` | Lossless screenshot. Native, no external tools required. |
-| `gif` | Single-frame GIF encoded with gifski (pure Rust). |
+| `gif` | Animated GIF from multi-frame session recording, encoded with gifski (pure Rust). |
 
 ## CI Integration
 
