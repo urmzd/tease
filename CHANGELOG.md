@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.10 (2026-03-16)
+
+### Bug Fixes
+
+- **ci**: remove hardcoded version from internal path dependencies ([67c2712](https://github.com/urmzd/teasr/commit/67c271259ade77eb39d2c64816f322f091937009))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.1.9...v0.1.10)
+
+
 ## 0.1.9 (2026-03-16)
 
 ### Bug Fixes
