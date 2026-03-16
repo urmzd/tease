@@ -1,8 +1,32 @@
-FROM ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main
+FROM ubuntu:24.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install host cross-compilation toolchain
+RUN apt-get update && apt-get install -y \
+        gcc-aarch64-linux-gnu \
+        g++-aarch64-linux-gnu \
+        libc6-dev-arm64-cross \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add arm64 architecture and package sources
 RUN dpkg --add-architecture arm64 && \
-    apt-get update && \
-    apt-get install -y \
+    cat <<'SOURCES' > /etc/apt/sources.list.d/arm64.sources
+Types: deb
+URIs: http://ports.ubuntu.com/ubuntu-ports/
+Suites: noble noble-updates noble-security
+Components: main restricted universe multiverse
+Architectures: arm64
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+SOURCES
+
+# Restrict default sources to amd64 only
+RUN sed -i '/^Architectures:/d' /etc/apt/sources.list.d/ubuntu.sources && \
+    sed -i '/^Types: deb/a Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
+
+# Install arm64 system dependencies
+RUN apt-get update && apt-get install -y \
         libwayland-dev:arm64 \
         libxcb1-dev:arm64 \
         libxcb-randr0-dev:arm64 \
@@ -16,3 +40,9 @@ RUN dpkg --add-architecture arm64 && \
         libvulkan-dev:arm64 \
         libpipewire-0.3-dev:arm64 \
     && rm -rf /var/lib/apt/lists/*
+
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc \
+    CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc \
+    CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ \
+    PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig \
+    PKG_CONFIG_ALLOW_CROSS=1
