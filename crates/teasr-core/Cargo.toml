@@ -8,7 +8,7 @@ repository.workspace = true
 readme = "README.md"
 
 [dependencies]
-teasr-term-render = { version = "0.2.0", path = "../teasr-term-render" }
+teasr-term-render = { path = "../teasr-term-render" }
 tokio.workspace = true
 serde.workspace = true
 toml.workspace = true
