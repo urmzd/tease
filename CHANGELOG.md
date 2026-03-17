@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.12 (2026-03-17)
+
+### Bug Fixes
+
+- **ci**: use bash shell for upload step to fix Windows compatibility ([46dcc59](https://github.com/urmzd/teasr/commit/46dcc59d1e9c4d308ed20f852fec1f874f5871d0))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.1.11...v0.1.12)
+
+
 ## 0.1.11 (2026-03-16)
 
 ### Bug Fixes

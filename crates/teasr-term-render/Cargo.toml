@@ -1,7 +1,7 @@
 [package]
 name = "teasr-term-render"
 description = "ANSI terminal output to PNG renderer"
-version = "0.1.11"
+version = "0.1.12"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
