@@ -17,22 +17,20 @@
 
 ## Showcase
 
-<table>
-  <tr>
-    <td align="center"><strong>CLI Help</strong></td>
-    <td align="center"><strong>Colorful Output</strong></td>
-  </tr>
-  <tr>
-    <td><img src="showcase/cli-help.gif" alt="CLI help" width="450"></td>
-    <td><img src="showcase/colorful-modes.gif" alt="Colorful terminal modes" width="450"></td>
-  </tr>
-  <tr>
-    <td align="center" colspan="2"><strong>Web Capture</strong></td>
-  </tr>
-  <tr>
-    <td align="center" colspan="2"><img src="showcase/demo-landing.png" alt="Demo landing page" width="600"></td>
-  </tr>
-</table>
+<p align="center">
+  <strong>CLI Help</strong><br>
+  <img src="showcase/cli-help.gif" alt="CLI help" width="600">
+</p>
+
+<p align="center">
+  <strong>Colorful Output</strong><br>
+  <img src="showcase/colorful-modes.gif" alt="Colorful terminal modes" width="600">
+</p>
+
+<p align="center">
+  <strong>Web Capture</strong><br>
+  <img src="showcase/demo-landing.png" alt="Demo landing page" width="600">
+</p>
 
 ## Why teasr
 
