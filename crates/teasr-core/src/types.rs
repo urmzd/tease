@@ -83,6 +83,7 @@ pub enum SceneConfig {
         viewport: Option<ViewportConfig>,
         formats: Option<Vec<OutputFormat>>,
         actions: Option<Vec<CaptureAction>>,
+        frame_duration: Option<u64>,
     },
     Screen {
         name: Option<String>,
@@ -196,6 +197,12 @@ impl TeaseConfig {
             output: self.output.unwrap_or_default(),
         }
     }
+}
+
+/// A single captured frame with PNG data and its display duration.
+pub struct CapturedFrame {
+    pub png_data: Vec<u8>,
+    pub duration_ms: u64,
 }
 
 #[derive(Debug)]

@@ -6,13 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use crate::types::TerminalStep;
-
-/// A single captured frame with PNG data and its display duration.
-pub struct CapturedFrame {
-    pub png_data: Vec<u8>,
-    pub duration_ms: u64,
-}
+use crate::types::{CapturedFrame, TerminalStep};
 
 /// Record an interactive terminal session and return captured frames.
 pub fn capture_session(
@@ -33,7 +27,15 @@ pub fn capture_session(
         })
         .context("failed to open PTY")?;
 
-    let mut cmd = CommandBuilder::new(if cfg!(windows) { "cmd" } else { "sh" });
+    let shell = if cfg!(windows) {
+        "cmd".to_string()
+    } else {
+        std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string())
+    };
+    let mut cmd = CommandBuilder::new(&shell);
+    if !cfg!(windows) {
+        cmd.arg("-li");
+    }
     cmd.env("TERM", "xterm-256color");
     cmd.env("FORCE_COLOR", "1");
     cmd.env("COLORTERM", "truecolor");
