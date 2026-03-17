@@ -11,6 +11,46 @@ formats = ["png"]
 type = "web"
 url = "/"
 name = "demo-landing"
+formats = ["gif", "png"]
+frame_duration = 400
+
+# Capture frames at different stages of the page animation:
+# 0ms    – page loaded, blank badges/cards, bar empty
+# +800ms – badges popping in, bar filling
+# +800ms – cards sliding up, bar nearly full
+# +800ms – status text visible, everything settled
+# +800ms – final resting state
+
+[[scenes.actions]]
+type = "screenshot"
+
+[[scenes.actions]]
+type = "wait"
+delay = 800
+
+[[scenes.actions]]
+type = "screenshot"
+
+[[scenes.actions]]
+type = "wait"
+delay = 800
+
+[[scenes.actions]]
+type = "screenshot"
+
+[[scenes.actions]]
+type = "wait"
+delay = 800
+
+[[scenes.actions]]
+type = "screenshot"
+
+[[scenes.actions]]
+type = "wait"
+delay = 800
+
+[[scenes.actions]]
+type = "screenshot"
 
 [[scenes]]
 type = "terminal"

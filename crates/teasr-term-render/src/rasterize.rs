@@ -20,6 +20,7 @@ static FONTDB: LazyLock<Arc<usvg::fontdb::Database>> = LazyLock::new(|| {
     db.load_font_data(JETBRAINS_MONO_BOLD.to_vec());
     db.load_font_data(JETBRAINS_MONO_ITALIC.to_vec());
     db.load_font_data(JETBRAINS_MONO_BOLD_ITALIC.to_vec());
+    db.load_system_fonts();
     Arc::new(db)
 });
 

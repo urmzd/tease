@@ -2,18 +2,36 @@ use anyhow::{Context, Result};
 use chromiumoxide::browser::{Browser, BrowserConfig};
 use chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotFormat;
 use futures::StreamExt;
-use std::path::Path;
 use std::time::Duration;
 
-use crate::types::{ActionType, CaptureAction, ViewportConfig};
+use crate::types::{ActionType, CaptureAction, CapturedFrame, ViewportConfig};
 
-/// Capture a web page screenshot via CDP.
+async fn take_screenshot_frame(
+    page: &chromiumoxide::Page,
+    duration_ms: u64,
+) -> Result<CapturedFrame> {
+    let png_data = page
+        .screenshot(
+            chromiumoxide::page::ScreenshotParams::builder()
+                .format(CaptureScreenshotFormat::Png)
+                .full_page(true)
+                .build(),
+        )
+        .await
+        .context("failed to take screenshot")?;
+    Ok(CapturedFrame {
+        png_data,
+        duration_ms,
+    })
+}
+
+/// Capture a web page as a sequence of frames via CDP.
 pub async fn capture(
     page_url: &str,
     viewport: &ViewportConfig,
     actions: &[CaptureAction],
-    output_path: &Path,
-) -> Result<()> {
+    frame_duration: u64,
+) -> Result<Vec<CapturedFrame>> {
     let config = BrowserConfig::builder()
         .window_size(viewport.width, viewport.height)
         .no_sandbox()
@@ -37,28 +55,26 @@ pub async fn capture(
     page.goto(page_url).await.context("navigation failed")?;
     tokio::time::sleep(Duration::from_millis(1000)).await;
 
-    // Execute actions
+    let mut frames: Vec<CapturedFrame> = Vec::new();
+
+    // Execute actions, capturing frames on Screenshot actions
     for action in actions {
         execute_action(&page, action).await?;
+
+        if matches!(action.action_type, ActionType::Screenshot) {
+            frames.push(take_screenshot_frame(&page, frame_duration).await?);
+        }
     }
 
-    let screenshot = page
-        .screenshot(
-            chromiumoxide::page::ScreenshotParams::builder()
-                .format(CaptureScreenshotFormat::Png)
-                .full_page(true)
-                .build(),
-        )
-        .await
-        .context("failed to take screenshot")?;
-
-    std::fs::write(output_path, &screenshot)
-        .with_context(|| format!("failed to write {}", output_path.display()))?;
+    // Always capture at least one final frame (backwards compat)
+    if frames.is_empty() {
+        frames.push(take_screenshot_frame(&page, frame_duration).await?);
+    }
 
     browser.close().await.ok();
     handle.await.ok();
 
-    Ok(())
+    Ok(frames)
 }
 
 async fn execute_action(
@@ -105,7 +121,7 @@ async fn execute_action(
             tokio::time::sleep(Duration::from_millis(ms)).await;
         }
         ActionType::Screenshot => {
-            // Inline screenshot during action sequence
+            // Frame capture is handled in the caller
         }
     }
 

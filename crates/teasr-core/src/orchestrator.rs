@@ -4,7 +4,7 @@ use tracing::{info, warn};
 
 use crate::capture;
 use crate::server::ManagedServer;
-use crate::types::{CaptureResult, OutputFormat, ResolvedConfig, SceneConfig};
+use crate::types::{CaptureResult, CapturedFrame, OutputFormat, ResolvedConfig, SceneConfig};
 
 /// Run all scenes in order and return capture results.
 pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
@@ -78,16 +78,69 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
                     files.push(png_path.display().to_string());
                 }
             }
-            _ => {
+            SceneConfig::Web {
+                url,
+                viewport,
+                actions,
+                frame_duration,
+                ..
+            } => {
+                let has_gif = formats.iter().any(|f| matches!(f, OutputFormat::Gif));
+                let has_png = formats.iter().any(|f| matches!(f, OutputFormat::Png));
+
+                let vp = viewport.as_ref().unwrap_or(&config.viewport);
+                let full_url = if let Some(server) = &config.server {
+                    if url.starts_with('/') {
+                        format!("{}{}", server.url.trim_end_matches('/'), url)
+                    } else {
+                        url.clone()
+                    }
+                } else {
+                    url.clone()
+                };
+                let fd = frame_duration.unwrap_or(100);
+
+                let captured_frames = capture::web::capture(
+                    &full_url,
+                    vp,
+                    actions.as_deref().unwrap_or(&[]),
+                    fd,
+                )
+                .await?;
+
+                info!("captured {} web frames", captured_frames.len());
+
+                if has_gif && !captured_frames.is_empty() {
+                    let gif_path = output_dir.join(format!("{scene_name}.gif"));
+                    crate::convert::gif::frames_to_gif(&captured_frames, &gif_path)?;
+                    files.push(gif_path.display().to_string());
+                }
+
+                if has_png && !captured_frames.is_empty() {
+                    let png_path = output_dir.join(format!("{scene_name}.png"));
+                    write_last_frame_png(&captured_frames, &png_path)?;
+                    files.push(png_path.display().to_string());
+                }
+
+                for format in formats {
+                    match format {
+                        OutputFormat::Mp4 => {
+                            warn!("MP4 output requires ffmpeg in PATH - skipping for now");
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            SceneConfig::Screen { .. } => {
                 for format in formats {
                     match format {
                         OutputFormat::Png => {
                             let path = output_dir.join(format!("{scene_name}.png"));
-                            capture_scene(scene, &path, config).await?;
+                            capture_screen_scene(scene, &path).await?;
                             files.push(path.display().to_string());
                         }
                         OutputFormat::Gif => {
-                            warn!("GIF output for non-terminal scenes not yet supported");
+                            warn!("GIF output for screen scenes not yet supported");
                         }
                         OutputFormat::Mp4 => {
                             warn!("MP4 output requires ffmpeg in PATH - skipping for now");
@@ -107,37 +160,21 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
     Ok(results)
 }
 
-async fn capture_scene(
+/// Write the last frame of a capture as a PNG file.
+fn write_last_frame_png(frames: &[CapturedFrame], output_path: &Path) -> Result<()> {
+    let last = frames
+        .last()
+        .context("no frames to write")?;
+    std::fs::write(output_path, &last.png_data)
+        .with_context(|| format!("failed to write {}", output_path.display()))?;
+    Ok(())
+}
+
+async fn capture_screen_scene(
     scene: &SceneConfig,
     output_path: &Path,
-    config: &ResolvedConfig,
 ) -> Result<()> {
     match scene {
-        SceneConfig::Web {
-            url,
-            viewport,
-            actions,
-            ..
-        } => {
-            let vp = viewport.as_ref().unwrap_or(&config.viewport);
-            let full_url = if let Some(server) = &config.server {
-                if url.starts_with('/') {
-                    format!("{}{}", server.url.trim_end_matches('/'), url)
-                } else {
-                    url.clone()
-                }
-            } else {
-                url.clone()
-            };
-
-            capture::web::capture(
-                &full_url,
-                vp,
-                actions.as_deref().unwrap_or(&[]),
-                output_path,
-            )
-            .await
-        }
         SceneConfig::Screen {
             display,
             region,
@@ -158,8 +195,6 @@ async fn capture_scene(
             }
             capture::screen::capture(*display, region.as_ref(), output_path)
         }
-        SceneConfig::Terminal { .. } => {
-            unreachable!("terminal scenes are handled directly in run()")
-        }
+        _ => unreachable!("only screen scenes should be passed here"),
     }
 }

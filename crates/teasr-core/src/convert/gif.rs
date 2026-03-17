@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use std::path::Path;
 
-use crate::capture::terminal::CapturedFrame;
+use crate::types::CapturedFrame;
 
 /// Assemble multiple captured frames into an animated GIF.
 pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path) -> Result<()> {
