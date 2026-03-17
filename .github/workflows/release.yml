@@ -92,4 +92,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ needs.release.outputs.tag }} teasr-*.tar.gz teasr-*.zip 2>/dev/null || true
+          shopt -s nullglob
+          files=(teasr-*.tar.gz teasr-*.zip)
+          if [ ${#files[@]} -gt 0 ]; then
+            gh release upload ${{ needs.release.outputs.tag }} "${files[@]}"
+          fi
