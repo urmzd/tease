@@ -34,6 +34,12 @@ pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path) -> Result<()> {
     for (i, frame) in frames.iter().enumerate() {
         let img = image::load_from_memory(&frame.png_data).context("failed to decode frame PNG")?;
         let rgba = img.to_rgba8();
+        // Resize if dimensions don't match the first frame
+        let rgba = if rgba.dimensions() != (width, height) {
+            image::imageops::resize(&rgba, width, height, image::imageops::FilterType::Lanczos3)
+        } else {
+            rgba
+        };
         let pixels: Vec<rgb::RGBA8> = rgba
             .pixels()
             .map(|p| rgb::RGBA8::new(p[0], p[1], p[2], p[3]))

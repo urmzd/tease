@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tease — project showcase capture</title>
+  <title>teasr — project showcase capture</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -12,9 +12,11 @@
       color: #e4e4e7;
       min-height: 100vh;
     }
+
+    /* ── Hero ── */
     .hero {
       text-align: center;
-      padding: 80px 24px 48px;
+      padding: 64px 24px 48px;
       background: linear-gradient(135deg, #18181b 0%, #1a1025 50%, #18181b 100%);
     }
     .hero h1 {
@@ -27,193 +29,306 @@
     }
     .hero p {
       margin-top: 12px;
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       color: #a1a1aa;
-      max-width: 520px;
+      max-width: 480px;
       margin-left: auto;
       margin-right: auto;
+      line-height: 1.5;
     }
-    .badges {
-      margin-top: 24px;
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-    }
-    .badge {
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 0.8rem;
+    .hero-cta {
+      display: inline-block;
+      margin-top: 28px;
+      padding: 12px 32px;
+      border-radius: 8px;
+      font-size: 1rem;
       font-weight: 600;
-      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
     }
-    .badge-purple { background: rgba(139,92,246,0.15); color: #a78bfa; }
-    .badge-blue { background: rgba(96,165,250,0.15); color: #93c5fd; }
-    .badge-green { background: rgba(74,222,128,0.15); color: #86efac; }
-
-    /* Animation: badges slide up + fade in sequentially */
-    .badge {
-      opacity: 0;
-      transform: translateY(8px);
-      animation: pop-in 0.4s ease forwards;
-    }
-    .badge:nth-child(1) { animation-delay: 0.6s; }
-    .badge:nth-child(2) { animation-delay: 0.9s; }
-    .badge:nth-child(3) { animation-delay: 1.2s; }
-    @keyframes pop-in {
-      to { opacity: 1; transform: translateY(0); }
+    .hero-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
     }
 
-    /* Animation: cards fade in with stagger */
-    .card {
-      opacity: 0;
-      transform: translateY(16px);
-      animation: slide-up 0.5s ease forwards;
-    }
-    .card:nth-child(1) { animation-delay: 1.5s; }
-    .card:nth-child(2) { animation-delay: 1.8s; }
-    .card:nth-child(3) { animation-delay: 2.1s; }
-    @keyframes slide-up {
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Progress bar in hero */
-    .progress-bar {
-      margin: 28px auto 0;
-      width: 240px;
-      height: 6px;
-      border-radius: 3px;
-      background: #27272a;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      border-radius: 3px;
-      background: linear-gradient(90deg, #a78bfa, #6366f1);
-      animation: fill-bar 2.5s ease forwards 0.3s;
-    }
-    @keyframes fill-bar {
-      to { width: 100%; }
-    }
-
-    /* Status text fades in after bar fills */
-    .status {
-      margin-top: 12px;
-      font-size: 0.85rem;
-      color: #86efac;
-      opacity: 0;
-      animation: pop-in 0.3s ease forwards 2.9s;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-      max-width: 520px;
+    /* ── Tabs ── */
+    .tabs-section {
+      max-width: 720px;
       margin: 0 auto;
       padding: 48px 24px;
     }
-    .card {
+    .tabs-section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      background: #1c1c22;
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #71717a;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+    .tab-btn:not(.active):hover {
+      color: #a1a1aa;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .tab-panel {
+      display: none;
       background: #1c1c22;
       border: 1px solid #2a2a33;
       border-radius: 12px;
-      padding: 32px 24px;
-      transition: border-color 0.2s;
+      padding: 28px 24px;
+      animation: fade-in 0.25s ease;
     }
-    .card:hover { border-color: #6366f1; }
-    .card-icon {
-      font-size: 2rem;
-      margin-bottom: 16px;
-      display: block;
-    }
-    .card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
-    .card p { font-size: 0.9rem; color: #a1a1aa; line-height: 1.5; }
+    .tab-panel.active { display: block; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .config-section {
+    .tab-panel h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .tab-panel p {
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .tab-panel code {
+      display: block;
+      background: #15151a;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #d4d4d8;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .tab-panel code .kw { color: #c084fc; }
+    .tab-panel code .str { color: #86efac; }
+    .tab-panel code .cm { color: #52525b; }
+
+    /* ── Features ── */
+    #features {
       max-width: 720px;
       margin: 0 auto;
-      padding: 0 24px 64px;
+      padding: 24px 24px 64px;
     }
-    .config-section h2 {
+    #features h2 {
       font-size: 1.5rem;
       font-weight: 700;
-      margin-bottom: 16px;
       text-align: center;
+      margin-bottom: 24px;
     }
-    pre {
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .feature-card {
       background: #1c1c22;
       border: 1px solid #2a2a33;
-      border-radius: 10px;
-      padding: 24px;
-      overflow-x: auto;
-      font-size: 0.85rem;
-      line-height: 1.6;
-      font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
     }
-    .kw { color: #c084fc; }
-    .str { color: #86efac; }
-    .fn { color: #93c5fd; }
-    .cm { color: #52525b; }
+    .feature-card:hover {
+      border-color: #6366f1;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+    }
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .feature-card p { font-size: 0.82rem; color: #a1a1aa; line-height: 1.4; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1c1c22;
+      border: 1px solid #6366f1;
+      border-radius: 10px;
+      padding: 14px 24px;
+      font-size: 0.9rem;
+      color: #e4e4e7;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      opacity: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toast.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #22c55e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
+  <!-- Hero -->
   <div class="hero">
     <h1>teasr</h1>
     <p>Automated screenshots and GIFs from your web apps, desktop, and terminal — configured with TOML, built in Rust.</p>
-    <div class="badges">
-      <span class="badge badge-purple">PNG</span>
-      <span class="badge badge-blue">GIF</span>
-      <span class="badge badge-green">MP4</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill"></div></div>
-    <p class="status">&#10003; 3 scenes captured</p>
+    <button class="hero-cta" id="cta-btn">See how it works</button>
   </div>
 
-  <div class="cards">
-    <div class="card">
-      <span class="card-icon">&#127760;</span>
-      <h3>Web Capture</h3>
-      <p>Drive Chrome via DevTools Protocol, execute actions like click, scroll, and hover, then capture full-page screenshots.</p>
-    </div>
-    <div class="card">
-      <span class="card-icon">&#128187;</span>
-      <h3>Screen Capture</h3>
-      <p>Capture desktop windows and native apps. Select displays, crop regions, and take native screenshots.</p>
-    </div>
-    <div class="card">
-      <span class="card-icon">&#9000;</span>
-      <h3>Terminal Capture</h3>
-      <p>Run CLI commands, preserve ANSI colors, and render styled terminal output as beautiful images.</p>
-    </div>
-  </div>
-
-  <div class="config-section">
+  <!-- Tabs -->
+  <div class="tabs-section" id="modes">
     <h2>One config. Three modes.</h2>
-    <pre><span class="cm"># teasr.toml</span>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="web" id="tab-web">Web</button>
+      <button class="tab-btn" data-tab="terminal" id="tab-terminal">Terminal</button>
+      <button class="tab-btn" data-tab="screen" id="tab-screen">Screen</button>
+    </div>
 
-<span class="cm"># Start your dev server</span>
-<span class="kw">[server]</span>
-command = <span class="str">"npm run dev"</span>
-url     = <span class="str">"http://localhost:3000"</span>
-
-<span class="kw">[output]</span>
-dir     = <span class="str">"./showcase"</span>
+    <div class="tab-panel active" id="panel-web">
+      <h3>Web Capture</h3>
+      <p>Drive Chrome via DevTools Protocol. Click, scroll, hover — then capture full-page screenshots or animated GIFs.</p>
+      <code><span class="kw">[[scenes]]</span>
+type    = <span class="str">"web"</span>
+url     = <span class="str">"/"</span>
+name    = <span class="str">"homepage"</span>
 formats = [<span class="str">"png"</span>, <span class="str">"gif"</span>]
 
-<span class="kw">[[scenes]]</span>
-type = <span class="str">"web"</span>
-url  = <span class="str">"/"</span>
-name = <span class="str">"homepage"</span>
+<span class="kw">[[scenes.actions]]</span>
+type     = <span class="str">"click"</span>
+selector = <span class="str">"#open-modal"</span>
 
-<span class="kw">[[scenes]]</span>
-type    = <span class="str">"terminal"</span>
-command = <span class="str">"npm test"</span>
-name    = <span class="str">"tests"</span>
-theme   = <span class="str">"dracula"</span>
+<span class="kw">[[scenes.actions]]</span>
+type = <span class="str">"screenshot"</span></code>
+    </div>
 
-<span class="kw">[[scenes]]</span>
-type = <span class="str">"screen"</span>
-name = <span class="str">"desktop"</span></pre>
+    <div class="tab-panel" id="panel-terminal">
+      <h3>Terminal Capture</h3>
+      <p>Script interactive PTY sessions. Type commands, press keys, wait for output — rendered with terminal chrome and themes.</p>
+      <code><span class="kw">[[scenes]]</span>
+type  = <span class="str">"terminal"</span>
+name  = <span class="str">"test-run"</span>
+theme = <span class="str">"dracula"</span>
+cols  = 100
+rows  = 24
+
+<span class="kw">[[scenes.steps]]</span>
+type  = <span class="str">"type"</span>
+text  = <span class="str">"cargo test"</span>
+speed = 50
+
+<span class="kw">[[scenes.steps]]</span>
+type = <span class="str">"key"</span>
+key  = <span class="str">"enter"</span></code>
+    </div>
+
+    <div class="tab-panel" id="panel-screen">
+      <h3>Screen Capture</h3>
+      <p>Capture native desktop windows and apps. Select displays, crop regions, run setup commands before capture.</p>
+      <code><span class="kw">[[scenes]]</span>
+type    = <span class="str">"screen"</span>
+name    = <span class="str">"native-app"</span>
+display = 0
+setup   = <span class="str">"open MyApp.app"</span>
+delay   = 2000
+
+<span class="cm"># Optional: crop to a region</span>
+region = { x = 0, y = 0, width = 1280, height = 720 }</code>
+    </div>
   </div>
+
+  <!-- Features -->
+  <div id="features">
+    <h2>Why teasr?</h2>
+    <div class="feature-grid">
+      <div class="feature-card" id="feature-binary">
+        <span class="feature-icon">&#9889;</span>
+        <h3>Single Binary</h3>
+        <p>No Node.js, no npm install. One binary, zero runtime dependencies.</p>
+      </div>
+      <div class="feature-card" id="feature-gif">
+        <span class="feature-icon">&#127916;</span>
+        <h3>GIF Encoding</h3>
+        <p>Pure-Rust gifski encoder. No FFmpeg or ImageMagick required.</p>
+      </div>
+      <div class="feature-card" id="feature-ci">
+        <span class="feature-icon">&#9881;</span>
+        <h3>CI Ready</h3>
+        <p>GitHub Action included. Auto-download binary, install Chrome, capture.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span class="toast-icon">&#10003;</span>
+    <span>3 scenes captured in 2.1s</span>
+  </div>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // CTA scrolls to tabs
+    document.getElementById('cta-btn').addEventListener('click', () => {
+      document.getElementById('modes').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Show toast after short delay (simulates capture completion)
+    setTimeout(() => {
+      document.getElementById('toast').classList.add('visible');
+      setTimeout(() => document.getElementById('toast').classList.remove('visible'), 4000);
+    }, 2000);
+  </script>
 </body>
 </html>

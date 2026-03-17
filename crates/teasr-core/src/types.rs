@@ -8,19 +8,23 @@ pub enum OutputFormat {
     Mp4,
 }
 
+fn default_wait() -> u64 {
+    1000
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "lowercase")]
-pub enum TerminalStep {
-    Type {
-        text: String,
-        speed: Option<u64>,
-    },
-    Key {
-        key: String,
-    },
+#[serde(tag = "type", rename_all = "kebab-case")]
+pub enum Interaction {
+    Type { text: String, speed: Option<u64> },
+    Key { key: String },
+    Click { selector: Option<String> },
+    Hover { selector: Option<String> },
+    ScrollTo { selector: Option<String> },
     Wait {
-        duration: Option<u64>,
+        #[serde(default = "default_wait")]
+        duration: u64,
     },
+    Snapshot { name: Option<String> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,25 +52,6 @@ impl Default for ViewportConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ActionType {
-    ScrollTo,
-    Click,
-    Wait,
-    Hover,
-    Screenshot,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CaptureAction {
-    #[serde(rename = "type")]
-    pub action_type: ActionType,
-    pub selector: Option<String>,
-    pub delay: Option<u64>,
-    pub name: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Region {
     pub x: u32,
     pub y: u32,
@@ -82,16 +67,26 @@ pub enum SceneConfig {
         name: Option<String>,
         viewport: Option<ViewportConfig>,
         formats: Option<Vec<OutputFormat>>,
-        actions: Option<Vec<CaptureAction>>,
+        #[serde(default)]
+        interactions: Vec<Interaction>,
         frame_duration: Option<u64>,
+        #[serde(default)]
+        full_page: Option<bool>,
     },
     Screen {
         name: Option<String>,
         display: Option<u32>,
+        window: Option<String>,
         region: Option<Region>,
         formats: Option<Vec<OutputFormat>>,
         setup: Option<String>,
         delay: Option<u64>,
+        title: Option<String>,
+        #[serde(default = "default_theme")]
+        theme: String,
+        #[serde(default)]
+        interactions: Vec<Interaction>,
+        frame_duration: Option<u64>,
     },
     Terminal {
         name: Option<String>,
@@ -99,7 +94,8 @@ pub enum SceneConfig {
         theme: Option<String>,
         cols: Option<usize>,
         rows: Option<usize>,
-        steps: Vec<TerminalStep>,
+        #[serde(default)]
+        interactions: Vec<Interaction>,
         frame_duration: Option<u64>,
     },
 }
@@ -107,13 +103,9 @@ pub enum SceneConfig {
 impl SceneConfig {
     pub fn name(&self) -> &str {
         match self {
-            SceneConfig::Web { name, url, .. } => {
-                name.as_deref().unwrap_or(url.as_str())
-            }
+            SceneConfig::Web { name, url, .. } => name.as_deref().unwrap_or(url.as_str()),
             SceneConfig::Screen { name, .. } => name.as_deref().unwrap_or("screen"),
-            SceneConfig::Terminal { name, .. } => {
-                name.as_deref().unwrap_or("recording")
-            }
+            SceneConfig::Terminal { name, .. } => name.as_deref().unwrap_or("recording"),
         }
     }
 
@@ -132,6 +124,14 @@ impl SceneConfig {
             SceneConfig::Terminal { .. } => "terminal",
         }
     }
+
+    pub fn interactions(&self) -> &[Interaction] {
+        match self {
+            SceneConfig::Web { interactions, .. } => interactions,
+            SceneConfig::Screen { interactions, .. } => interactions,
+            SceneConfig::Terminal { interactions, .. } => interactions,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -140,6 +140,10 @@ pub struct ServerConfig {
     pub url: String,
     #[serde(default = "default_timeout")]
     pub timeout: u64,
+}
+
+fn default_theme() -> String {
+    "dracula".to_string()
 }
 
 fn default_timeout() -> u64 {

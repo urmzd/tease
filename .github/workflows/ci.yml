@@ -21,7 +21,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwayland-dev libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xfixes0-dev libxkbcommon-dev libdbus-1-dev libpipewire-0.3-dev libegl-dev libgl-dev libgbm-dev libvulkan-dev
+          sudo apt-get install -y libwayland-dev libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xfixes0-dev libxkbcommon-dev libdbus-1-dev libpipewire-0.3-dev libegl-dev libgl-dev libgbm-dev libvulkan-dev xvfb xterm
 
       - run: cargo build --release -p teasr-cli
       - run: cargo clippy --workspace -- -D warnings
@@ -36,7 +36,7 @@ jobs:
         run: echo "${{ github.workspace }}/target/release" >> "$GITHUB_PATH"
 
       - name: Dogfood
-        run: teasr --verbose --timeout 60000
+        run: xvfb-run --auto-servernum --server-args "-screen 0 1280x720x24" teasr --verbose --timeout 60000
 
       - name: Upload showcase
         uses: actions/upload-artifact@v4

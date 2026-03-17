@@ -7,51 +7,59 @@ timeout = 10000
 dir = "./showcase"
 formats = ["png"]
 
+# ── Web: interactive demo page ──
 [[scenes]]
 type = "web"
 url = "/"
 name = "demo-landing"
 formats = ["gif", "png"]
-frame_duration = 400
+frame_duration = 600
+full_page = false
 
-# Capture frames at different stages of the page animation:
-# 0ms    – page loaded, blank badges/cards, bar empty
-# +800ms – badges popping in, bar filling
-# +800ms – cards sliding up, bar nearly full
-# +800ms – status text visible, everything settled
-# +800ms – final resting state
-
-[[scenes.actions]]
-type = "screenshot"
-
-[[scenes.actions]]
+[[scenes.interactions]]
+type = "snapshot"
+[[scenes.interactions]]
+type = "click"
+selector = "#cta-btn"
+[[scenes.interactions]]
 type = "wait"
-delay = 800
-
-[[scenes.actions]]
-type = "screenshot"
-
-[[scenes.actions]]
+duration = 800
+[[scenes.interactions]]
+type = "snapshot"
+[[scenes.interactions]]
+type = "click"
+selector = "#tab-terminal"
+[[scenes.interactions]]
 type = "wait"
-delay = 800
-
-[[scenes.actions]]
-type = "screenshot"
-
-[[scenes.actions]]
+duration = 500
+[[scenes.interactions]]
+type = "snapshot"
+[[scenes.interactions]]
+type = "click"
+selector = "#tab-screen"
+[[scenes.interactions]]
 type = "wait"
-delay = 800
-
-[[scenes.actions]]
-type = "screenshot"
-
-[[scenes.actions]]
+duration = 500
+[[scenes.interactions]]
+type = "snapshot"
+[[scenes.interactions]]
+type = "scroll-to"
+selector = "#features"
+[[scenes.interactions]]
 type = "wait"
-delay = 800
+duration = 600
+[[scenes.interactions]]
+type = "snapshot"
+[[scenes.interactions]]
+type = "hover"
+selector = "#feature-binary"
+[[scenes.interactions]]
+type = "wait"
+duration = 400
+[[scenes.interactions]]
+type = "snapshot"
 
-[[scenes.actions]]
-type = "screenshot"
-
+# ── Terminal: build teasr itself ──
 [[scenes]]
 type = "terminal"
 name = "cli-help"
@@ -61,37 +69,35 @@ rows = 24
 formats = ["gif", "png"]
 frame_duration = 80
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "type"
 text = "teasr --help"
 speed = 50
-
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "key"
 key = "enter"
-
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "wait"
 duration = 2000
 
+# ── Screen: launch a fresh terminal session and capture it ──
 [[scenes]]
-type = "terminal"
-name = "colorful-modes"
-theme = "dracula"
-cols = 60
-rows = 10
+type = "screen"
+name = "desktop"
+setup = "if [ \"$(uname)\" = 'Darwin' ]; then open -na Ghostty.app --args -e \"$PWD/examples/screen-demo.sh\"; else xterm -geometry 90x24 -e \"$PWD/examples/screen-demo.sh\" & sleep 1; fi"
+delay = 3000
 formats = ["gif", "png"]
-frame_duration = 80
+frame_duration = 500
 
-[[scenes.steps]]
-type = "type"
-text = "echo -e '\\033[1;32m✔ teasr\\033[0m captured \\033[1;36m3 scenes\\033[0m in \\033[33m2.1s\\033[0m'"
-speed = 30
-
-[[scenes.steps]]
-type = "key"
-key = "enter"
-
-[[scenes.steps]]
+[[scenes.interactions]]
+type = "snapshot"
+[[scenes.interactions]]
 type = "wait"
-duration = 1500
+duration = 1000
+[[scenes.interactions]]
+type = "snapshot"
+[[scenes.interactions]]
+type = "wait"
+duration = 1000
+[[scenes.interactions]]
+type = "snapshot"

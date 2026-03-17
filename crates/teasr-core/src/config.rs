@@ -51,11 +51,11 @@ mod tests {
 type = "terminal"
 name = "demo"
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "type"
 text = "echo hello"
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "key"
 key = "enter"
 "#,
@@ -89,15 +89,15 @@ name = "listing"
 theme = "dracula"
 cols = 80
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "type"
 text = "ls -la"
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "key"
 key = "enter"
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "wait"
 duration = 500
 "#,

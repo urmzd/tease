@@ -18,18 +18,18 @@
 ## Showcase
 
 <p align="center">
-  <strong>CLI Help</strong><br>
-  <img src="showcase/cli-help.gif" alt="CLI help" width="600">
-</p>
-
-<p align="center">
-  <strong>Colorful Output</strong><br>
-  <img src="showcase/colorful-modes.gif" alt="Colorful terminal modes" width="600">
-</p>
-
-<p align="center">
   <strong>Web Capture</strong><br>
-  <img src="showcase/demo-landing.png" alt="Demo landing page" width="600">
+  <img src="showcase/demo-landing.gif" alt="Web capture with click, scroll, and hover interactions" width="600">
+</p>
+
+<p align="center">
+  <strong>Terminal Capture</strong><br>
+  <img src="showcase/cli-help.gif" alt="Terminal capture of CLI help" width="600">
+</p>
+
+<p align="center">
+  <strong>Screen Capture</strong><br>
+  <img src="showcase/desktop.png" alt="Desktop screen capture" width="600">
 </p>
 
 ## Why teasr
@@ -64,8 +64,8 @@ Create `teasr.toml` in your project root:
 
 ```toml
 [server]
-command = "npx serve examples/demo --listen 3123"
-url = "http://localhost:3123"
+command = "npm run dev"
+url = "http://localhost:3000"
 timeout = 10000
 
 [output]
@@ -75,7 +75,18 @@ formats = ["png"]
 [[scenes]]
 type = "web"
 url = "/"
-name = "demo-landing"
+name = "homepage"
+formats = ["gif", "png"]
+
+[[scenes.interactions]]
+type = "snapshot"
+
+[[scenes.interactions]]
+type = "click"
+selector = "#get-started"
+
+[[scenes.interactions]]
+type = "snapshot"
 
 [[scenes]]
 type = "terminal"
@@ -84,18 +95,17 @@ theme = "dracula"
 cols = 90
 rows = 24
 formats = ["gif", "png"]
-frame_duration = 80
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "type"
 text = "teasr --help"
 speed = 50
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "key"
 key = "enter"
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "wait"
 duration = 2000
 ```
@@ -109,6 +119,20 @@ teasr
 Output files are written to `./showcase/`.
 
 ## Capture Modes
+
+All three capture modes use a unified `[[scenes.interactions]]` syntax. Every interaction type is accepted by every mode — unsupported interactions are silently skipped (visible with `--verbose`).
+
+### Interaction Types
+
+| Type | Fields | Description |
+|------|--------|-------------|
+| `type` | `text`, `speed` (ms per char, optional) | Type text (terminal: PTY input, web: keyboard events) |
+| `key` | `key` (e.g. `"enter"`) | Press a key |
+| `click` | `selector` (CSS selector, optional) | Click an element |
+| `hover` | `selector` (CSS selector, optional) | Hover over an element |
+| `scroll-to` | `selector` (CSS selector, optional) | Scroll an element into view |
+| `wait` | `duration` (ms, default 1000) | Pause before next interaction |
+| `snapshot` | `name` (optional) | Capture the current state as a frame |
 
 ### Web
 
@@ -124,12 +148,12 @@ name = "dashboard"
 viewport = { width = 1440, height = 900 }
 formats = ["png", "gif"]
 
-[[scenes.actions]]
+[[scenes.interactions]]
 type = "click"
 selector = "#open-modal"
 
-[[scenes.actions]]
-type = "screenshot"
+[[scenes.interactions]]
+type = "snapshot"
 name = "modal-open"
 ```
 
@@ -141,13 +165,14 @@ name = "modal-open"
 | `name` | string | url value | Output filename base |
 | `viewport` | object | `1280x720` | `{ width, height }` |
 | `formats` | array | `output.formats` | Per-scene format override |
-| `actions` | array | — | Sequence of interactions before capture |
+| `interactions` | array | `[]` | Sequence of interactions |
+| `full_page` | boolean | `true` | Capture full page height or just viewport |
 
-**Action types:** `click`, `scroll-to`, `hover`, `wait`, `screenshot`
+**Supported interactions:** `click`, `hover`, `scroll-to`, `wait`, `snapshot`, `type`, `key`
 
 ### Terminal
 
-Scripts an interactive PTY session using steps (type, key, wait), captures frames at each step, and renders them as animated GIFs or PNGs with terminal chrome (title bar, traffic light buttons).
+Scripts an interactive PTY session, captures frames at each interaction, and renders them as animated GIFs or PNGs with terminal chrome (title bar, traffic light buttons).
 
 ```toml
 [[scenes]]
@@ -159,16 +184,16 @@ rows = 24
 formats = ["gif", "png"]
 frame_duration = 80
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "type"
 text = "cargo test 2>&1"
 speed = 50
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "key"
 key = "enter"
 
-[[scenes.steps]]
+[[scenes.interactions]]
 type = "wait"
 duration = 2000
 ```
@@ -181,29 +206,34 @@ duration = 2000
 | `theme` | string | `"dracula"` | `"dracula"` or `"monokai"` |
 | `cols` | integer | `80` | Terminal width in columns |
 | `rows` | integer | `24` | Terminal height in rows |
-| `steps` | array | required | Sequence of steps to record |
-| `frame_duration` | integer | `80` | Milliseconds per frame in GIF output |
+| `interactions` | array | `[]` | Sequence of interactions |
+| `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
 | `formats` | array | `output.formats` | Per-scene format override |
 
-**Step types:**
-
-| Type | Fields | Description |
-|------|--------|-------------|
-| `type` | `text`, `speed` (ms per char, optional) | Type text into the terminal |
-| `key` | `key` (e.g. `"enter"`) | Press a key |
-| `wait` | `duration` (ms, optional) | Wait before next step |
+**Supported interactions:** `type`, `key`, `wait`, `snapshot`
 
 ### Screen
 
-Captures a display or region using native screen capture (xcap).
+Captures a display, window, or region using native screen capture (xcap). Supports multi-frame GIF output when multiple `snapshot` + `wait` interactions are configured.
 
 ```toml
 [[scenes]]
 type = "screen"
 name = "native-app"
-display = 0
+window = "MyApp"
 setup = "open MyApp.app"
 delay = 2000
+formats = ["gif", "png"]
+
+[[scenes.interactions]]
+type = "snapshot"
+
+[[scenes.interactions]]
+type = "wait"
+duration = 1000
+
+[[scenes.interactions]]
+type = "snapshot"
 ```
 
 **Screen scene fields:**
@@ -211,11 +241,16 @@ delay = 2000
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `name` | string | `"screen"` | Output filename base |
-| `display` | integer | primary | Display index |
+| `display` | integer | primary | Display index (ignored if `window` is set) |
+| `window` | string | — | Window title or app name substring (case-insensitive) |
 | `region` | object | full display | `{ x, y, width, height }` |
 | `setup` | string | — | Shell command run before capture |
 | `delay` | integer | — | Milliseconds to wait after setup |
+| `interactions` | array | `[]` | Sequence of interactions |
+| `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
 | `formats` | array | `output.formats` | Per-scene format override |
+
+**Supported interactions:** `snapshot`, `wait`
 
 ## Configuration Reference
 

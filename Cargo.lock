@@ -3095,7 +3095,7 @@ checksum = "df7f62577c25e07834649fc3b39fafdc597c0a3527dc1c60129201ccfcbaa50c"
 
 [[package]]
 name = "teasr-cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -3107,9 +3107,11 @@ dependencies = [
 
 [[package]]
 name = "teasr-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
+ "async-trait",
+ "base64",
  "chromiumoxide",
  "futures",
  "gifski",
@@ -3131,7 +3133,7 @@ dependencies = [
 
 [[package]]
 name = "teasr-term-render"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anstyle-parse 0.2.7",
  "anyhow",
