@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0 (2026-03-18)
+
+### Features
+
+- add showme subcommand, show help on bare teasr invocation ([7d4698e](https://github.com/urmzd/teasr/commit/7d4698e8cccd82a04fae2b4eae2b8f4044cad8b7))
+
+### Documentation
+
+- document frame_duration for web scenes and chrome frame options for screen capture ([bb15ef2](https://github.com/urmzd/teasr/commit/bb15ef22e60be2c699fa78938e3ae53411708bfd))
+
+### Refactoring
+
+- **install**: rename tmpdir to TMPDIR_CLEANUP for clarity ([3f030b0](https://github.com/urmzd/teasr/commit/3f030b0b07ac3389a509e564dc253a45a4bf2c20))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.3.0...v0.4.0)
+
+
 ## 0.3.0 (2026-03-17)
 
 ### Features
