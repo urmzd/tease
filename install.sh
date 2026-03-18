@@ -39,7 +39,7 @@ get_latest_version() {
 }
 
 main() {
-  local target version asset url tmpdir
+  local target version asset url
 
   target="$(detect_target)"
   version="${1:-$(get_latest_version)}"
@@ -48,13 +48,13 @@ main() {
 
   echo "Installing teasr ${version} for ${target}..."
 
-  tmpdir="$(mktemp -d)"
-  trap 'rm -rf "$tmpdir"' EXIT
+  TMPDIR_CLEANUP="$(mktemp -d)"
+  trap 'rm -rf "$TMPDIR_CLEANUP"' EXIT
 
-  curl -fsSL "$url" | tar xz -C "$tmpdir"
+  curl -fsSL "$url" | tar xz -C "$TMPDIR_CLEANUP"
 
   mkdir -p "$INSTALL_DIR"
-  mv "$tmpdir/$BINARY" "$INSTALL_DIR/$BINARY"
+  mv "$TMPDIR_CLEANUP/$BINARY" "$INSTALL_DIR/$BINARY"
   chmod +x "$INSTALL_DIR/$BINARY"
 
   echo "teasr installed to $INSTALL_DIR/$BINARY"
