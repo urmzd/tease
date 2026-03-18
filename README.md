@@ -113,7 +113,7 @@ duration = 2000
 Then run:
 
 ```bash
-teasr
+teasr showme
 ```
 
 Output files are written to `./showcase/`.
@@ -286,7 +286,21 @@ Config file discovery walks up from the current directory to the filesystem root
 ## CLI Reference
 
 ```
-teasr [OPTIONS]
+teasr [COMMAND]
+
+Commands:
+  showme  Run capture scenes from teasr.toml
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
+
+### `teasr showme`
+
+```
+teasr showme [OPTIONS]
 
 Options:
   -c, --config <PATH>      Path to teasr.toml (default: auto-discover)
@@ -295,7 +309,6 @@ Options:
       --verbose            Enable debug logging
       --timeout <MS>       Global timeout in ms [default: 60000]
   -h, --help               Print help
-  -V, --version            Print version
 ```
 
 `--formats` accepts comma-separated values: `--formats png,gif`
