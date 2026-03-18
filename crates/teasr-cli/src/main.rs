@@ -1,37 +1,58 @@
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use tracing::info;
 
 #[derive(Parser, Debug)]
 #[command(name = "teasr", about = "Capture showcase screenshots and GIFs", version)]
 struct Cli {
-    /// Path to config file (default: search for teasr.toml)
-    #[arg(short, long)]
-    config: Option<PathBuf>,
+    #[command(subcommand)]
+    command: Option<Command>,
+}
 
-    /// Output directory (overrides config)
-    #[arg(short, long)]
-    output: Option<String>,
+#[derive(Subcommand, Debug)]
+enum Command {
+    /// Run capture scenes from teasr.toml
+    Showme {
+        /// Path to config file (default: search for teasr.toml)
+        #[arg(short, long)]
+        config: Option<PathBuf>,
 
-    /// Output formats (comma-separated: png,gif,mp4)
-    #[arg(long, value_delimiter = ',')]
-    formats: Option<Vec<String>>,
+        /// Output directory (overrides config)
+        #[arg(short, long)]
+        output: Option<String>,
 
-    /// Enable verbose logging
-    #[arg(long)]
-    verbose: bool,
+        /// Output formats (comma-separated: png,gif,mp4)
+        #[arg(long, value_delimiter = ',')]
+        formats: Option<Vec<String>>,
 
-    /// Global timeout in milliseconds
-    #[arg(long, default_value = "60000")]
-    timeout: u64,
+        /// Enable verbose logging
+        #[arg(long)]
+        verbose: bool,
+
+        /// Global timeout in milliseconds
+        #[arg(long, default_value = "60000")]
+        timeout: u64,
+    },
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let filter = if cli.verbose { "debug" } else { "info" };
+    let Some(Command::Showme {
+        config,
+        output,
+        formats,
+        verbose,
+        timeout,
+    }) = cli.command
+    else {
+        Cli::parse_from(["teasr", "--help"]);
+        return Ok(());
+    };
+
+    let filter = if verbose { "debug" } else { "info" };
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -40,21 +61,25 @@ async fn main() -> Result<()> {
         .with_target(false)
         .init();
 
-    let timeout = std::time::Duration::from_millis(cli.timeout);
+    let timeout_dur = std::time::Duration::from_millis(timeout);
 
-    let result = tokio::time::timeout(timeout, run(cli)).await;
+    let result = tokio::time::timeout(timeout_dur, run(config, output, formats)).await;
 
     match result {
         Ok(Ok(())) => Ok(()),
         Ok(Err(e)) => Err(e),
         Err(_) => {
-            anyhow::bail!("teasr timed out after {}ms", timeout.as_millis());
+            anyhow::bail!("teasr timed out after {}ms", timeout_dur.as_millis());
         }
     }
 }
 
-async fn run(cli: Cli) -> Result<()> {
-    let config_path = if let Some(path) = &cli.config {
+async fn run(
+    config: Option<PathBuf>,
+    output: Option<String>,
+    formats: Option<Vec<String>>,
+) -> Result<()> {
+    let config_path = if let Some(path) = &config {
         path.clone()
     } else {
         let cwd = std::env::current_dir().context("failed to get cwd")?;
@@ -65,14 +90,14 @@ async fn run(cli: Cli) -> Result<()> {
     info!("using config: {}", config_path.display());
     let mut config = teasr_core::config::load_config(&config_path)?;
 
-    if let Some(output) = &cli.output {
+    if let Some(output) = &output {
         config.output.dir = output.clone();
     }
 
-    if let Some(formats) = &cli.formats {
+    if let Some(formats) = &formats {
         let parsed: Vec<teasr_core::types::OutputFormat> = formats
             .iter()
-            .map(|f| match f.as_str() {
+            .map(|f: &String| match f.as_str() {
                 "png" => Ok(teasr_core::types::OutputFormat::Png),
                 "gif" => Ok(teasr_core::types::OutputFormat::Gif),
                 "mp4" => Ok(teasr_core::types::OutputFormat::Mp4),
