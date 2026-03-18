@@ -167,6 +167,7 @@ name = "modal-open"
 | `formats` | array | `output.formats` | Per-scene format override |
 | `interactions` | array | `[]` | Sequence of interactions |
 | `full_page` | boolean | `true` | Capture full page height or just viewport |
+| `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
 
 **Supported interactions:** `click`, `hover`, `scroll-to`, `wait`, `snapshot`, `type`, `key`
 
@@ -214,15 +215,16 @@ duration = 2000
 
 ### Screen
 
-Captures a display, window, or region using native screen capture (xcap). Supports multi-frame GIF output when multiple `snapshot` + `wait` interactions are configured.
+Captures a display, window, or region using native screen capture (xcap). Screenshots are automatically wrapped in macOS-style window chrome (matching terminal output). Supports multi-frame GIF output when multiple `snapshot` + `wait` interactions are configured.
 
 ```toml
 [[scenes]]
 type = "screen"
 name = "native-app"
-window = "MyApp"
 setup = "open MyApp.app"
 delay = 2000
+theme = "dracula"
+title = "My App"
 formats = ["gif", "png"]
 
 [[scenes.interactions]]
@@ -248,6 +250,8 @@ type = "snapshot"
 | `delay` | integer | — | Milliseconds to wait after setup |
 | `interactions` | array | `[]` | Sequence of interactions |
 | `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
+| `title` | string | `"Screen Capture"` | Title shown in chrome frame title bar |
+| `theme` | string | `"dracula"` | Chrome frame theme: `"dracula"` or `"monokai"` |
 | `formats` | array | `output.formats` | Per-scene format override |
 
 **Supported interactions:** `snapshot`, `wait`
