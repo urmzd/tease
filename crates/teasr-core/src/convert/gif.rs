@@ -1,10 +1,10 @@
 use anyhow::{Context, Result};
 use std::path::Path;
 
-use crate::types::CapturedFrame;
+use crate::types::{CapturedFrame, GifConfig};
 
 /// Assemble multiple captured frames into an animated GIF.
-pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path) -> Result<()> {
+pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path, config: &GifConfig) -> Result<()> {
     if frames.is_empty() {
         anyhow::bail!("no frames to encode");
     }
@@ -14,12 +14,17 @@ pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path) -> Result<()> {
     let first_rgba = first_img.to_rgba8();
     let (width, height) = first_rgba.dimensions();
 
+    let repeat = match config.repeat {
+        None | Some(0) => gifski::Repeat::Infinite,
+        Some(n) => gifski::Repeat::Finite(n),
+    };
+
     let (collector, writer) = gifski::new(gifski::Settings {
         width: Some(width),
         height: Some(height),
-        quality: 90,
-        fast: false,
-        repeat: gifski::Repeat::Infinite,
+        quality: config.quality,
+        fast: config.fast,
+        repeat,
     })?;
 
     let gif_path_owned = gif_path.to_path_buf();
