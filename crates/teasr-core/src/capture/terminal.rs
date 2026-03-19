@@ -11,7 +11,7 @@ use crate::types::{CapturedFrame, Interaction};
 
 pub struct TerminalBackend {
     cols: usize,
-    rows: usize,
+    rows: Option<usize>,
     theme: String,
     title: Option<String>,
     frame_duration: u64,
@@ -25,7 +25,7 @@ pub struct TerminalBackend {
 impl TerminalBackend {
     pub fn new(
         cols: usize,
-        rows: usize,
+        rows: Option<usize>,
         theme: &str,
         title: Option<String>,
         frame_duration: u64,
@@ -69,9 +69,10 @@ impl CaptureBackend for TerminalBackend {
 
     async fn setup(&mut self) -> Result<()> {
         let pty_system = native_pty_system();
+        let pty_rows = self.rows.unwrap_or(500) as u16;
         let pair = pty_system
             .openpty(PtySize {
-                rows: self.rows as u16,
+                rows: pty_rows,
                 cols: self.cols as u16,
                 pixel_width: 0,
                 pixel_height: 0,
@@ -129,9 +130,11 @@ impl CaptureBackend for TerminalBackend {
 
         self.writer = Some(writer);
         self.buffer = Some(buffer);
-        self.emulator = Some(teasr_term_render::TerminalEmulator::new(
-            self.cols, self.rows,
-        ));
+        self.emulator = Some(if let Some(rows) = self.rows {
+            teasr_term_render::TerminalEmulator::new(self.cols, rows)
+        } else {
+            teasr_term_render::TerminalEmulator::new_unbounded(self.cols)
+        });
         self.reader_handle = Some(reader_handle);
         self.child = Some(child);
 
@@ -180,11 +183,18 @@ impl CaptureBackend for TerminalBackend {
                 }])
             }
             Interaction::Wait { duration } => {
-                thread::sleep(Duration::from_millis(*duration));
-                Ok(vec![CapturedFrame {
-                    png_data: self.drain_and_snapshot()?,
-                    duration_ms: *duration,
-                }])
+                let interval = self.frame_duration.max(50);
+                let steps = (*duration / interval).max(1);
+                let step_ms = *duration / steps;
+                let mut frames = Vec::new();
+                for _ in 0..steps {
+                    thread::sleep(Duration::from_millis(step_ms));
+                    frames.push(CapturedFrame {
+                        png_data: self.drain_and_snapshot()?,
+                        duration_ms: step_ms,
+                    });
+                }
+                Ok(frames)
             }
             Interaction::Snapshot { .. } => {
                 Ok(vec![CapturedFrame {

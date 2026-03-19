@@ -23,7 +23,8 @@ pub struct SvgOptions {
 
 /// Render a cell grid to an SVG string.
 pub fn render(grid: &CellGrid, theme: &Theme, opts: &SvgOptions) -> String {
-    let (num_rows, num_cols) = grid.dimensions();
+    let num_rows = grid.rows.len();
+    let num_cols = grid.cols;
     let content_width = num_cols as f64 * CELL_WIDTH;
     let content_height = num_rows as f64 * CELL_HEIGHT;
     let total_width = content_width + PADDING * 2.0;

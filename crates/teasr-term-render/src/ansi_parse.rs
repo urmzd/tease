@@ -414,6 +414,14 @@ impl TerminalEmulator {
         }
     }
 
+    /// Create an unbounded terminal emulator that grows with content.
+    pub fn new_unbounded(cols: usize) -> Self {
+        Self {
+            parser: Parser::<CharAcc>::new(),
+            builder: GridBuilder::new(cols),
+        }
+    }
+
     /// Feed raw bytes into the emulator incrementally.
     pub fn feed(&mut self, data: &[u8]) {
         for &byte in data {
