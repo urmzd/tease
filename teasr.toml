@@ -5,14 +5,16 @@ timeout = 10000
 
 [output]
 dir = "./showcase"
-formats = ["png"]
+
+[[output.formats]]
+output_type = "png"
 
 # ── Web: interactive demo page ──
 [[scenes]]
 type = "web"
 url = "/"
 name = "demo-landing"
-formats = ["gif", "png"]
+formats = [{ output_type = "gif" }, { output_type = "png" }]
 frame_duration = 600
 full_page = false
 
@@ -65,8 +67,7 @@ type = "terminal"
 name = "cli-help"
 theme = "dracula"
 cols = 90
-rows = 24
-formats = ["gif", "png"]
+formats = [{ output_type = "gif" }, { output_type = "png" }]
 frame_duration = 80
 
 [[scenes.interactions]]
@@ -86,7 +87,7 @@ type = "screen"
 name = "desktop"
 setup = "if [ \"$(uname)\" = 'Darwin' ]; then open -na Ghostty.app --args -e \"$PWD/examples/screen-demo.sh\"; else xterm -geometry 90x24 -e \"$PWD/examples/screen-demo.sh\" & sleep 1; fi"
 delay = 3000
-formats = ["gif", "png"]
+formats = [{ output_type = "gif" }, { output_type = "png" }]
 frame_duration = 500
 
 [[scenes.interactions]]
