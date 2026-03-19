@@ -33,6 +33,14 @@ enum Command {
         /// Global timeout in milliseconds
         #[arg(long, default_value = "60000")]
         timeout: u64,
+
+        /// Frames per second (overrides config, converted to frame_duration)
+        #[arg(long)]
+        fps: Option<u32>,
+
+        /// Per-scene capture timeout in seconds (overrides config)
+        #[arg(long)]
+        seconds: Option<f64>,
     },
 }
 
@@ -46,6 +54,8 @@ async fn main() -> Result<()> {
         formats,
         verbose,
         timeout,
+        fps,
+        seconds,
     }) = cli.command
     else {
         Cli::parse_from(["teasr", "--help"]);
@@ -63,7 +73,7 @@ async fn main() -> Result<()> {
 
     let timeout_dur = std::time::Duration::from_millis(timeout);
 
-    let result = tokio::time::timeout(timeout_dur, run(config, output, formats)).await;
+    let result = tokio::time::timeout(timeout_dur, run(config, output, formats, fps, seconds)).await;
 
     match result {
         Ok(Ok(())) => Ok(()),
@@ -78,6 +88,8 @@ async fn run(
     config: Option<PathBuf>,
     output: Option<String>,
     formats: Option<Vec<String>>,
+    fps: Option<u32>,
+    seconds: Option<f64>,
 ) -> Result<()> {
     let config_path = if let Some(path) = &config {
         path.clone()
@@ -94,13 +106,21 @@ async fn run(
         config.output.dir = output.clone();
     }
 
+    if let Some(fps) = fps {
+        config.frame_duration_ms = 1000 / fps.max(1) as u64;
+    }
+
+    if let Some(secs) = seconds {
+        config.seconds = secs;
+    }
+
     if let Some(formats) = &formats {
         let parsed: Vec<teasr_core::types::OutputFormat> = formats
             .iter()
             .map(|f: &String| match f.as_str() {
-                "png" => Ok(teasr_core::types::OutputFormat::Png),
-                "gif" => Ok(teasr_core::types::OutputFormat::Gif),
-                "mp4" => Ok(teasr_core::types::OutputFormat::Mp4),
+                "png" => Ok(teasr_core::types::OutputFormat::Png(Default::default())),
+                "gif" => Ok(teasr_core::types::OutputFormat::Gif(Default::default())),
+                "mp4" => Ok(teasr_core::types::OutputFormat::Mp4(Default::default())),
                 other => anyhow::bail!("unknown format: {other}"),
             })
             .collect::<Result<_>>()?;
