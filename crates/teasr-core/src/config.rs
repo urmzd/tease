@@ -76,7 +76,7 @@ timeout = 5000
 
 [output]
 dir = "./showcase"
-formats = ["png"]
+formats = [{ output_type = "png" }]
 
 [[scenes]]
 type = "web"
