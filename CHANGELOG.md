@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0 (2026-03-19)
+
+### Features
+
+- **chrome-frame**: add image scaling to prevent oversized renders ([b7bd993](https://github.com/urmzd/teasr/commit/b7bd993df9936b0322ce92b220a1eafc3637610f))
+
+### Documentation
+
+- update cli help screenshots ([b6356dc](https://github.com/urmzd/teasr/commit/b6356dc1e249c4b5b46044e1a5acbef839fee154))
+
+### Miscellaneous
+
+- update Cargo.lock ([a89ed77](https://github.com/urmzd/teasr/commit/a89ed77ec7fb2591b1590d0c7310085fbbb011e2))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.4.0...v0.5.0)
+
+
 ## 0.4.0 (2026-03-18)
 
 ### Features
