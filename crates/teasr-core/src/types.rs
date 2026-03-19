@@ -1,11 +1,56 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(tag = "output_type", rename_all = "lowercase")]
 pub enum OutputFormat {
-    Png,
-    Gif,
-    Mp4,
+    Png(PngConfig),
+    Gif(GifConfig),
+    Mp4(Mp4Config),
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PngConfig {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GifConfig {
+    #[serde(default = "default_gif_quality")]
+    pub quality: u8,
+    #[serde(default)]
+    pub fast: bool,
+    /// None or 0 = infinite repeat
+    pub repeat: Option<u16>,
+}
+
+impl Default for GifConfig {
+    fn default() -> Self {
+        Self {
+            quality: default_gif_quality(),
+            fast: false,
+            repeat: None,
+        }
+    }
+}
+
+fn default_gif_quality() -> u8 {
+    90
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Mp4Config {
+    #[serde(default = "default_mp4_fps")]
+    pub fps: u32,
+}
+
+impl Default for Mp4Config {
+    fn default() -> Self {
+        Self {
+            fps: default_mp4_fps(),
+        }
+    }
+}
+
+fn default_mp4_fps() -> u32 {
+    24
 }
 
 fn default_wait() -> u64 {
@@ -163,7 +208,7 @@ fn default_output_dir() -> String {
 }
 
 fn default_formats() -> Vec<OutputFormat> {
-    vec![OutputFormat::Png]
+    vec![OutputFormat::Png(PngConfig::default())]
 }
 
 impl Default for OutputConfig {
@@ -181,6 +226,10 @@ pub struct TeaseConfig {
     pub server: Option<ServerConfig>,
     pub viewport: Option<ViewportConfig>,
     pub output: Option<OutputConfig>,
+    /// Frames per second (converted to frame_duration_ms = 1000/fps).
+    pub fps: Option<u32>,
+    /// Per-scene capture timeout in seconds.
+    pub seconds: Option<f64>,
 }
 
 /// Fully resolved config with defaults applied.
@@ -190,6 +239,10 @@ pub struct ResolvedConfig {
     pub server: Option<ServerConfig>,
     pub viewport: ViewportConfig,
     pub output: OutputConfig,
+    /// Global frame duration in ms, derived from fps (default: 24fps → 41ms).
+    pub frame_duration_ms: u64,
+    /// Per-scene capture timeout in seconds (default: 2.5s).
+    pub seconds: f64,
 }
 
 impl TeaseConfig {
@@ -199,6 +252,8 @@ impl TeaseConfig {
             server: self.server,
             viewport: self.viewport.unwrap_or_default(),
             output: self.output.unwrap_or_default(),
+            frame_duration_ms: 1000 / self.fps.unwrap_or(24).max(1) as u64,
+            seconds: self.seconds.unwrap_or(2.5),
         }
     }
 }
