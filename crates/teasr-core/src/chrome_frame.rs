@@ -18,6 +18,16 @@ pub async fn render_with_chrome_frame(
     let img_w = img.width();
     let img_h = img.height();
 
+    // Scale down for Chrome rendering if the image is too large
+    const MAX_WIDTH: u32 = 1280;
+    let scale = if img_w > MAX_WIDTH {
+        MAX_WIDTH as f64 / img_w as f64
+    } else {
+        1.0
+    };
+    let render_w = (img_w as f64 * scale).round() as u32;
+    let render_h = (img_h as f64 * scale).round() as u32;
+
     let (bg, chrome_bg, fg, btn_close, btn_min, btn_max) = match theme {
         "monokai" => ("#272822", "#1e1f1c", "#f8f8f2", "#f92672", "#f4bf75", "#a6e22e"),
         _ => ("#282a36", "#1e1f29", "#f8f8f2", "#ff5555", "#f1fa8c", "#50fa7b"),
@@ -103,17 +113,17 @@ body {{
 </div>
 </body>
 </html>"#,
-        vp_w = img_w + 32 + 80,  // content padding (16*2) + body padding (40*2)
-        vp_h = img_h + 40 + 32 + 80,  // chrome + content padding + body padding
-        win_w = img_w + 32,  // content padding
+        vp_w = render_w + 32 + 80,  // content padding (16*2) + body padding (40*2)
+        vp_h = render_h + 40 + 32 + 80,  // chrome + content padding + body padding
+        win_w = render_w + 32,  // content padding
         chrome_bg = chrome_bg,
         btn_close = btn_close,
         btn_min = btn_min,
         btn_max = btn_max,
         fg = fg,
         bg = bg,
-        img_w = img_w,
-        img_h = img_h,
+        img_w = render_w,
+        img_h = render_h,
         title = title_text,
         b64 = b64,
     );
@@ -121,8 +131,8 @@ body {{
     let html_b64 = base64::engine::general_purpose::STANDARD.encode(html.as_bytes());
     let data_url = format!("data:text/html;base64,{html_b64}");
 
-    let vp_w = img_w + 32 + 80;
-    let vp_h = img_h + 40 + 32 + 80;
+    let vp_w = render_w + 32 + 80;
+    let vp_h = render_h + 40 + 32 + 80;
 
     debug!("chrome frame: viewport {}x{}", vp_w, vp_h);
 
