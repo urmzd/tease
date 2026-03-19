@@ -128,8 +128,9 @@ body {{
         b64 = b64,
     );
 
-    let html_b64 = base64::engine::general_purpose::STANDARD.encode(html.as_bytes());
-    let data_url = format!("data:text/html;base64,{html_b64}");
+    let tmp = std::env::temp_dir().join(format!("teasr-frame-{}.html", std::process::id()));
+    std::fs::write(&tmp, html.as_bytes()).context("failed to write temp HTML for chrome frame")?;
+    let file_url = format!("file://{}", tmp.display());
 
     let vp_w = render_w + 32 + 80;
     let vp_h = render_h + 40 + 32 + 80;
@@ -151,7 +152,7 @@ body {{
     });
 
     let page = browser
-        .new_page(&data_url)
+        .new_page(&file_url)
         .await
         .context("failed to create page for chrome framing")?;
 
@@ -170,6 +171,7 @@ body {{
     let mut browser = browser;
     browser.close().await.ok();
     handle.await.ok();
+    std::fs::remove_file(&tmp).ok();
 
     Ok(screenshot)
 }
