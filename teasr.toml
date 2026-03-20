@@ -85,6 +85,7 @@ duration = 2000
 [[scenes]]
 type = "screen"
 name = "desktop"
+window = "Ghostty"
 setup = "if [ \"$(uname)\" = 'Darwin' ]; then open -na Ghostty.app --args -e \"$PWD/examples/screen-demo.sh\"; else xterm -geometry 90x24 -e \"$PWD/examples/screen-demo.sh\" & sleep 1; fi"
 delay = 3000
 formats = [{ output_type = "gif" }, { output_type = "png" }]
