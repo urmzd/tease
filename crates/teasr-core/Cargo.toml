@@ -14,7 +14,7 @@ serde.workspace = true
 toml.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
-chromiumoxide = { version = "0.7", features = ["tokio-runtime"], default-features = false }
+chromiumoxide = { version = "0.9", default-features = false }
 xcap = "0.9"
 portable-pty = "0.9"
 gifski = { version = "1", default-features = false }
