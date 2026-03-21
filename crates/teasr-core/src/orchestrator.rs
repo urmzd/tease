@@ -64,7 +64,7 @@ fn build_backend(
                 full_url,
                 vp,
                 frame_duration.unwrap_or(default_fd),
-                full_page.unwrap_or(true),
+                full_page.unwrap_or(false),
             ))
         }
         SceneConfig::Screen {
