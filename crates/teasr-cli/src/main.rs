@@ -12,6 +12,16 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
+    /// Install fonts and check system readiness
+    Setup {
+        /// Font name to install (e.g. "JetBrainsMono Nerd Font"). Lists available if omitted.
+        #[arg(long)]
+        fonts: Option<Option<String>>,
+
+        /// Check if the configured font is available
+        #[arg(long)]
+        check: bool,
+    },
     /// Run capture scenes from teasr.toml
     Showme {
         /// Path to config file (default: search for teasr.toml)
@@ -52,39 +62,77 @@ enum Command {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let Some(Command::Showme {
-        config,
-        output,
-        formats,
-        verbose,
-        timeout,
-        fps,
-        seconds,
-        scene_timeout,
-    }) = cli.command
-    else {
-        Cli::parse_from(["teasr", "--help"]);
-        return Ok(());
-    };
+    match cli.command {
+        Some(Command::Setup { fonts, check }) => {
+            tracing_subscriber::fmt()
+                .with_env_filter(
+                    tracing_subscriber::EnvFilter::try_from_default_env()
+                        .unwrap_or_else(|_| "info".into()),
+                )
+                .with_target(false)
+                .init();
 
-    let filter = if verbose { "debug" } else { "info" };
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| filter.into()),
-        )
-        .with_target(false)
-        .init();
+            if check {
+                let family = "JetBrainsMono Nerd Font";
+                if teasr_core::setup::check_font(family) {
+                    info!("font '{family}' is available");
+                } else {
+                    anyhow::bail!("font '{family}' is NOT available. Run: teasr setup --fonts");
+                }
+                return Ok(());
+            }
 
-    let timeout_dur = std::time::Duration::from_millis(timeout);
+            match fonts {
+                Some(Some(name)) => teasr_core::setup::install_font(&name).await?,
+                Some(None) => {
+                    teasr_core::setup::list_fonts();
+                    println!("Install with: teasr setup --fonts \"<font name>\"");
+                }
+                None => {
+                    teasr_core::setup::list_fonts();
+                    println!("Install with: teasr setup --fonts \"<font name>\"");
+                    println!("Check availability: teasr setup --check");
+                }
+            }
+            Ok(())
+        }
+        Some(Command::Showme {
+            config,
+            output,
+            formats,
+            verbose,
+            timeout,
+            fps,
+            seconds,
+            scene_timeout,
+        }) => {
+            let filter = if verbose { "debug" } else { "info" };
+            tracing_subscriber::fmt()
+                .with_env_filter(
+                    tracing_subscriber::EnvFilter::try_from_default_env()
+                        .unwrap_or_else(|_| filter.into()),
+                )
+                .with_target(false)
+                .init();
 
-    let result = tokio::time::timeout(timeout_dur, run(config, output, formats, fps, seconds, scene_timeout)).await;
+            let timeout_dur = std::time::Duration::from_millis(timeout);
+            let result = tokio::time::timeout(
+                timeout_dur,
+                run(config, output, formats, fps, seconds, scene_timeout),
+            )
+            .await;
 
-    match result {
-        Ok(Ok(())) => Ok(()),
-        Ok(Err(e)) => Err(e),
-        Err(_) => {
-            anyhow::bail!("teasr timed out after {}ms", timeout_dur.as_millis());
+            match result {
+                Ok(Ok(())) => Ok(()),
+                Ok(Err(e)) => Err(e),
+                Err(_) => {
+                    anyhow::bail!("teasr timed out after {}ms", timeout_dur.as_millis());
+                }
+            }
+        }
+        None => {
+            Cli::parse_from(["teasr", "--help"]);
+            Ok(())
         }
     }
 }
