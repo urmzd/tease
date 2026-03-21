@@ -2,35 +2,45 @@
 use anyhow::{Context, Result};
 use resvg::tiny_skia;
 use resvg::usvg;
-use std::sync::{Arc, LazyLock};
+use std::path::Path;
+use std::sync::{Arc, LazyLock, Mutex};
 
-// Embed JetBrains Mono font for consistent rendering
-const JETBRAINS_MONO_REGULAR: &[u8] =
-    include_bytes!("../assets/JetBrainsMono-Regular.ttf");
-const JETBRAINS_MONO_BOLD: &[u8] =
-    include_bytes!("../assets/JetBrainsMono-Bold.ttf");
-const JETBRAINS_MONO_ITALIC: &[u8] =
-    include_bytes!("../assets/JetBrainsMono-Italic.ttf");
-const JETBRAINS_MONO_BOLD_ITALIC: &[u8] =
-    include_bytes!("../assets/JetBrainsMono-BoldItalic.ttf");
-
-static FONTDB: LazyLock<Arc<usvg::fontdb::Database>> = LazyLock::new(|| {
+static FONTDB: LazyLock<Mutex<usvg::fontdb::Database>> = LazyLock::new(|| {
     let mut db = usvg::fontdb::Database::new();
-    db.load_font_data(JETBRAINS_MONO_REGULAR.to_vec());
-    db.load_font_data(JETBRAINS_MONO_BOLD.to_vec());
-    db.load_font_data(JETBRAINS_MONO_ITALIC.to_vec());
-    db.load_font_data(JETBRAINS_MONO_BOLD_ITALIC.to_vec());
     db.load_system_fonts();
-    Arc::new(db)
+    Mutex::new(db)
 });
 
+/// Check if a font family is available (in system fonts or loaded extras).
+pub fn check_font_available(family: &str) -> bool {
+    let db = FONTDB.lock().unwrap();
+    let result = db.faces().any(|face| {
+        face.families
+            .iter()
+            .any(|(name, _)| name.eq_ignore_ascii_case(family))
+    });
+    result
+}
+
+/// Load an extra font file (.ttf/.otf) into the global font database.
+pub fn load_extra_font(path: &Path) -> Result<()> {
+    let data = std::fs::read(path)
+        .with_context(|| format!("failed to read font file: {}", path.display()))?;
+    let mut db = FONTDB.lock().unwrap();
+    db.load_font_data(data);
+    Ok(())
+}
+
 /// Convert an SVG string to PNG bytes.
-pub fn svg_to_png(svg: &str) -> Result<Vec<u8>> {
+pub fn svg_to_png(svg: &str, font_family: Option<&str>) -> Result<Vec<u8>> {
+    let db = FONTDB.lock().unwrap();
     let opts = usvg::Options {
-        font_family: "JetBrains Mono".to_string(),
-        fontdb: FONTDB.clone(),
+        font_family: font_family.unwrap_or("monospace").to_string(),
+        fontdb: Arc::new(db.clone()),
         ..Default::default()
     };
+    drop(db);
+
     let tree = usvg::Tree::from_str(svg, &opts)
         .context("failed to parse SVG")?;
 
@@ -55,7 +65,7 @@ mod tests {
         let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
             <rect width="100" height="100" fill="red"/>
         </svg>"#;
-        let png = svg_to_png(svg).unwrap();
+        let png = svg_to_png(svg, None).unwrap();
         // PNG magic bytes
         assert_eq!(&png[..4], &[0x89, 0x50, 0x4e, 0x47]);
     }
