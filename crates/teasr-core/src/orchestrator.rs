@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
-use tracing::{error, info, warn};
+use tracing::debug;
 
 use crate::backend::CaptureBackend;
 use crate::capture;
@@ -9,6 +9,7 @@ use crate::types::{
     CaptureResult, CapturedFrame, FontConfig, OutputFormat, ResolvedConfig, SceneConfig,
     ViewportConfig,
 };
+use crate::ui;
 
 /// Build a backend for the given scene config.
 fn build_backend(
@@ -118,13 +119,14 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
 
     for (i, scene) in config.scenes.iter().enumerate() {
         let scene_name = scene.name().to_string();
-        info!(
+        let label = format!(
             "[{}/{}] capturing: {} ({})",
             i + 1,
             config.scenes.len(),
             scene_name,
             scene.scene_type()
         );
+        let pb = ui::spinner(&label);
 
         match capture_scene(
             scene,
@@ -138,8 +140,15 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
         )
         .await
         {
-            Ok(result) => results.push(result),
-            Err(e) => error!("scene '{}' failed: {e:#}", scene_name),
+            Ok(result) => {
+                let detail = format!("{} frames", result.files.len());
+                ui::spinner_done(&pb, Some(&detail));
+                results.push(result);
+            }
+            Err(e) => {
+                pb.finish_and_clear();
+                ui::error(&format!("scene '{}' failed: {e:#}", scene_name));
+            }
         }
     }
 
@@ -147,10 +156,9 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
         anyhow::bail!("all scenes failed");
     }
 
-    info!(
-        "{}/{} scenes captured successfully",
-        results.len(),
-        config.scenes.len()
+    ui::phase_ok(
+        &format!("{}/{} scenes captured successfully", results.len(), config.scenes.len()),
+        None,
     );
     Ok(results)
 }
@@ -243,7 +251,7 @@ async fn capture_scene(
 
     backend.teardown().await?;
 
-    info!("captured {} frames", frames.len());
+    debug!("captured {} frames", frames.len());
 
     let files = write_outputs(&frames, &scene_name, formats, output_dir)?;
 
@@ -309,7 +317,7 @@ fn write_outputs(
                 files.push(png_path.display().to_string());
             }
             OutputFormat::Mp4(_) => {
-                warn!("MP4 output requires ffmpeg in PATH - skipping for now");
+                ui::warn("MP4 output requires ffmpeg in PATH - skipping for now");
             }
             _ => {}
         }
