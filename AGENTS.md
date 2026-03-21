@@ -36,7 +36,7 @@ crates/
 - Config is loaded from `teasr.toml` (auto-discovered walking up from cwd)
 - Web capture requires Chrome/Chromium installed on the system
 - Example config exists at `teasr.toml` in the repo root
-- Demo HTML for testing is in `examples/demo/`
+- Showcase config in `teasr.toml` captures this project's GitHub page, CLI help, and Finder window
 
 ## Testing
 

@@ -19,7 +19,7 @@
 
 <p align="center">
   <strong>Web Capture</strong><br>
-  <img src="showcase/demo-landing.gif" alt="Web capture with click, scroll, and hover interactions" width="600">
+  <img src="showcase/github.gif" alt="Web capture of this project's GitHub page" width="600">
 </p>
 
 <p align="center">
@@ -29,7 +29,7 @@
 
 <p align="center">
   <strong>Screen Capture</strong><br>
-  <img src="showcase/desktop.png" alt="Desktop screen capture" width="600">
+  <img src="showcase/finder.png" alt="Finder window showing project directory" width="600">
 </p>
 
 ## Why teasr
