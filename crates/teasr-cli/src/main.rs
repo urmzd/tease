@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use tracing::info;
 
 #[derive(Parser, Debug)]
 #[command(name = "teasr", about = "Capture showcase screenshots and GIFs", version)]
@@ -55,6 +54,10 @@ enum Command {
         /// Per-scene wall-clock timeout in seconds (overrides config)
         #[arg(long)]
         scene_timeout: Option<f64>,
+
+        /// Only run scenes matching these names (comma-separated)
+        #[arg(long, value_delimiter = ',')]
+        scenes: Option<Vec<String>>,
     },
 }
 
@@ -67,15 +70,17 @@ async fn main() -> Result<()> {
             tracing_subscriber::fmt()
                 .with_env_filter(
                     tracing_subscriber::EnvFilter::try_from_default_env()
-                        .unwrap_or_else(|_| "info".into()),
+                        .unwrap_or_else(|_| "warn".into()),
                 )
                 .with_target(false)
                 .init();
 
+            teasr_core::ui::header("teasr setup");
+
             if check {
-                let family = "JetBrainsMono Nerd Font";
-                if teasr_core::setup::check_font(family) {
-                    info!("font '{family}' is available");
+                let family = teasr_core::types::FontConfig::default().family;
+                if teasr_core::setup::check_font(&family) {
+                    teasr_core::ui::phase_ok(&format!("font '{family}' is available"), None);
                 } else {
                     anyhow::bail!("font '{family}' is NOT available. Run: teasr setup --fonts");
                 }
@@ -86,12 +91,12 @@ async fn main() -> Result<()> {
                 Some(Some(name)) => teasr_core::setup::install_font(&name).await?,
                 Some(None) => {
                     teasr_core::setup::list_fonts();
-                    println!("Install with: teasr setup --fonts \"<font name>\"");
+                    teasr_core::ui::info("Install with: teasr setup --fonts \"<font name>\"");
                 }
                 None => {
                     teasr_core::setup::list_fonts();
-                    println!("Install with: teasr setup --fonts \"<font name>\"");
-                    println!("Check availability: teasr setup --check");
+                    teasr_core::ui::info("Install with: teasr setup --fonts \"<font name>\"");
+                    teasr_core::ui::info("Check availability: teasr setup --check");
                 }
             }
             Ok(())
@@ -105,8 +110,9 @@ async fn main() -> Result<()> {
             fps,
             seconds,
             scene_timeout,
+            scenes,
         }) => {
-            let filter = if verbose { "debug" } else { "info" };
+            let filter = if verbose { "debug" } else { "warn" };
             tracing_subscriber::fmt()
                 .with_env_filter(
                     tracing_subscriber::EnvFilter::try_from_default_env()
@@ -115,10 +121,12 @@ async fn main() -> Result<()> {
                 .with_target(false)
                 .init();
 
+            teasr_core::ui::header("teasr showme");
+
             let timeout_dur = std::time::Duration::from_millis(timeout);
             let result = tokio::time::timeout(
                 timeout_dur,
-                run(config, output, formats, fps, seconds, scene_timeout),
+                run(config, output, formats, fps, seconds, scene_timeout, scenes),
             )
             .await;
 
@@ -144,6 +152,7 @@ async fn run(
     fps: Option<u32>,
     seconds: Option<f64>,
     scene_timeout: Option<f64>,
+    scenes: Option<Vec<String>>,
 ) -> Result<()> {
     let config_path = if let Some(path) = &config {
         path.clone()
@@ -153,7 +162,7 @@ async fn run(
             .context("no teasr.toml found (searched from cwd to root). Use --config to specify.")?
     };
 
-    info!("using config: {}", config_path.display());
+    teasr_core::ui::info(&format!("using config: {}", config_path.display()));
     let mut config = teasr_core::config::load_config(&config_path)?;
 
     if let Some(output) = &output {
@@ -170,6 +179,17 @@ async fn run(
 
     if let Some(t) = scene_timeout {
         config.scene_timeout = t;
+    }
+
+    if let Some(ref filter) = scenes {
+        config.scenes.retain(|s| {
+            filter.iter().any(|f| {
+                s.name().eq_ignore_ascii_case(f) || s.scene_type().eq_ignore_ascii_case(f)
+            })
+        });
+        if config.scenes.is_empty() {
+            anyhow::bail!("no scenes matched filter: {}", filter.join(", "));
+        }
     }
 
     if let Some(formats) = &formats {
@@ -189,7 +209,7 @@ async fn run(
 
     for result in &results {
         for file in &result.files {
-            info!("  wrote: {file}");
+            teasr_core::ui::phase_ok("wrote", Some(file));
         }
     }
 
