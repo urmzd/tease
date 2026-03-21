@@ -12,17 +12,20 @@ const BUTTON_START_X: f64 = 20.0;
 const BUTTON_GAP: f64 = 20.0;
 const CORNER_RADIUS: f64 = 10.0;
 
-// JetBrains Mono is embedded at rasterization time; SVG just references it by name.
-const FONT_FAMILY: &str = "JetBrains Mono, monospace";
-const FONT_SIZE: f64 = 14.0;
+const DEFAULT_FONT_FAMILY: &str = "monospace";
+const DEFAULT_FONT_SIZE: f64 = 14.0;
 
 #[derive(Default)]
 pub struct SvgOptions {
     pub title: Option<String>,
+    pub font_family: Option<String>,
+    pub font_size: Option<f64>,
 }
 
 /// Render a cell grid to an SVG string.
 pub fn render(grid: &CellGrid, theme: &Theme, opts: &SvgOptions) -> String {
+    let font_family = opts.font_family.as_deref().unwrap_or(DEFAULT_FONT_FAMILY);
+    let font_size = opts.font_size.unwrap_or(DEFAULT_FONT_SIZE);
     let num_rows = grid.rows.len();
     let num_cols = grid.cols;
     let content_width = num_cols as f64 * CELL_WIDTH;
@@ -66,7 +69,7 @@ pub fn render(grid: &CellGrid, theme: &Theme, opts: &SvgOptions) -> String {
     // Title text (if provided)
     if let Some(title) = &opts.title {
         svg.push_str(&format!(
-            r#"<text x="{x}" y="{y}" font-family="{FONT_FAMILY}" font-size="13" fill="{fg}" text-anchor="middle">{title}</text>"#,
+            r#"<text x="{x}" y="{y}" font-family="{font_family}" font-size="13" fill="{fg}" text-anchor="middle">{title}</text>"#,
             x = total_width / 2.0,
             y = BUTTON_Y + 4.0,
             fg = theme.foreground,
@@ -107,7 +110,7 @@ pub fn render(grid: &CellGrid, theme: &Theme, opts: &SvgOptions) -> String {
             }
 
             svg.push_str(&format!(
-                r#"<text x="{x}" y="{text_y}" font-family="{FONT_FAMILY}" font-size="{FONT_SIZE}" style="{style}" xml:space="preserve">{text}</text>"#,
+                r#"<text x="{x}" y="{text_y}" font-family="{font_family}" font-size="{font_size}" style="{style}" xml:space="preserve">{text}</text>"#,
                 text = escape_xml(&span.text),
             ));
 
@@ -259,6 +262,7 @@ mod tests {
             &DRACULA,
             &SvgOptions {
                 title: Some("My Terminal".into()),
+                ..Default::default()
             },
         );
         assert!(svg.contains("My Terminal"));
