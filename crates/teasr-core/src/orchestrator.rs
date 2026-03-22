@@ -87,6 +87,21 @@ fn build_backend(
             title.clone(),
             theme.clone(),
         )),
+        SceneConfig::File {
+            path,
+            viewport,
+            frame_duration,
+            page,
+            ..
+        } => {
+            let vp = viewport.as_ref().unwrap_or(global_viewport).clone();
+            Box::new(capture::file::FileBackend::new(
+                path,
+                vp,
+                frame_duration.unwrap_or(default_fd),
+                *page,
+            ))
+        }
     }
 }
 
