@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.10.2 (2026-03-22)
+
+### Performance
+
+- **render**: reuse Arc<fontdb> instead of cloning entire font database per frame ([13b34ba](https://github.com/urmzd/teasr/commit/13b34baa2d6afc127f08b6aada4a80992707bff9))
+
+### Documentation
+
+- **showcase**: regenerate showcase assets ([e5b0cf7](https://github.com/urmzd/teasr/commit/e5b0cf7d166718f4efc8db2834d6ab0163a65130))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.10.1...v0.10.2)
+
+
 ## 0.10.1 (2026-03-21)
 
 ### Bug Fixes
