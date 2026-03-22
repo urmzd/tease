@@ -5,16 +5,16 @@ use resvg::usvg;
 use std::path::Path;
 use std::sync::{Arc, LazyLock, Mutex};
 
-static FONTDB: LazyLock<Mutex<usvg::fontdb::Database>> = LazyLock::new(|| {
+static FONTDB: LazyLock<Mutex<Arc<usvg::fontdb::Database>>> = LazyLock::new(|| {
     let mut db = usvg::fontdb::Database::new();
     db.load_system_fonts();
-    Mutex::new(db)
+    Mutex::new(Arc::new(db))
 });
 
 /// Check if a font family is available (in system fonts or loaded extras).
 pub fn check_font_available(family: &str) -> bool {
-    let db = FONTDB.lock().unwrap();
-    let result = db.faces().any(|face| {
+    let arc = FONTDB.lock().unwrap();
+    let result = arc.faces().any(|face| {
         face.families
             .iter()
             .any(|(name, _)| name.eq_ignore_ascii_case(family))
@@ -26,20 +26,20 @@ pub fn check_font_available(family: &str) -> bool {
 pub fn load_extra_font(path: &Path) -> Result<()> {
     let data = std::fs::read(path)
         .with_context(|| format!("failed to read font file: {}", path.display()))?;
-    let mut db = FONTDB.lock().unwrap();
+    let mut arc = FONTDB.lock().unwrap();
+    let db = Arc::make_mut(&mut arc);
     db.load_font_data(data);
     Ok(())
 }
 
 /// Convert an SVG string to PNG bytes.
 pub fn svg_to_png(svg: &str, font_family: Option<&str>) -> Result<Vec<u8>> {
-    let db = FONTDB.lock().unwrap();
+    let fontdb = FONTDB.lock().unwrap().clone();
     let opts = usvg::Options {
         font_family: font_family.unwrap_or("monospace").to_string(),
-        fontdb: Arc::new(db.clone()),
+        fontdb,
         ..Default::default()
     };
-    drop(db);
 
     let tree = usvg::Tree::from_str(svg, &opts)
         .context("failed to parse SVG")?;
