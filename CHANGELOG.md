@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.0 (2026-03-22)
+
+### Features
+
+- **orchestrator**: integrate file capture backend ([734b744](https://github.com/urmzd/teasr/commit/734b74487c2c35427578aaf2a79c6db59302f044))
+- **capture**: add file backend for local file rendering ([3fabc7f](https://github.com/urmzd/teasr/commit/3fabc7fcafa565a8f71b7dcf036deb61474e7c2c))
+- **types**: add File scene configuration variant ([f8297b5](https://github.com/urmzd/teasr/commit/f8297b58c99fca26fe4e4fa21928ad8f4b219575))
+
+### Miscellaneous
+
+- **hooks**: add sr commit message validation hooks ([2c446ef](https://github.com/urmzd/teasr/commit/2c446efeb588b00a0a54e04c900b83c8a2a1dc71))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.10.2...v0.11.0)
+
+
 ## 0.10.2 (2026-03-22)
 
 ### Performance
