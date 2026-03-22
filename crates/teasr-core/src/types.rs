@@ -174,6 +174,17 @@ pub enum SceneConfig {
         interactions: Vec<Interaction>,
         frame_duration: Option<u64>,
     },
+    /// Capture a local file (HTML, PDF, SVG, etc.) rendered in a headless browser.
+    File {
+        path: String,
+        name: Option<String>,
+        viewport: Option<ViewportConfig>,
+        formats: Option<Vec<OutputFormat>>,
+        /// Page number to capture (1-indexed, default: 1). Only applies to PDFs.
+        #[serde(default = "default_page")]
+        page: u32,
+        frame_duration: Option<u64>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -192,6 +203,10 @@ pub struct SplashConfig {
     pub center: bool,
 }
 
+fn default_page() -> u32 {
+    1
+}
+
 fn default_splash_duration() -> u64 {
     2000
 }
@@ -206,6 +221,7 @@ impl SceneConfig {
             SceneConfig::Web { name, url, .. } => name.as_deref().unwrap_or(url.as_str()),
             SceneConfig::Screen { name, .. } => name.as_deref().unwrap_or("screen"),
             SceneConfig::Terminal { name, .. } => name.as_deref().unwrap_or("recording"),
+            SceneConfig::File { name, path, .. } => name.as_deref().unwrap_or(path.as_str()),
         }
     }
 
@@ -214,6 +230,7 @@ impl SceneConfig {
             SceneConfig::Web { formats, .. } => formats,
             SceneConfig::Screen { formats, .. } => formats,
             SceneConfig::Terminal { formats, .. } => formats,
+            SceneConfig::File { formats, .. } => formats,
         }
     }
 
@@ -222,6 +239,7 @@ impl SceneConfig {
             SceneConfig::Web { .. } => "web",
             SceneConfig::Screen { .. } => "screen",
             SceneConfig::Terminal { .. } => "terminal",
+            SceneConfig::File { .. } => "file",
         }
     }
 
@@ -230,6 +248,7 @@ impl SceneConfig {
             SceneConfig::Web { interactions, .. } => interactions,
             SceneConfig::Screen { interactions, .. } => interactions,
             SceneConfig::Terminal { interactions, .. } => interactions,
+            SceneConfig::File { .. } => &[],
         }
     }
 }
