@@ -19,7 +19,7 @@ raw bytes (ANSI)
 
 ```toml
 [dependencies]
-teasr-term-render = "0.7"
+teasr-term-render = "0.11"
 ```
 
 ```rust

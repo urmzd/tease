@@ -138,6 +138,25 @@ All four capture modes use a unified `[[scenes.interactions]]` syntax. Every int
 | `wait` | `duration` (ms, default 1000) | Pause before next interaction |
 | `snapshot` | `name` (optional) | Capture the current state as a frame |
 
+Every interaction also accepts a `hidden` flag (default `false`). Hidden interactions execute normally but their frames are excluded from output — useful for setup steps (e.g. typing a command) that should not appear in the final GIF or screenshot.
+
+```toml
+[[scenes.interactions]]
+type = "type"
+text = "cd my-project"
+hidden = true
+
+[[scenes.interactions]]
+type = "key"
+key = "enter"
+hidden = true
+
+[[scenes.interactions]]
+type = "wait"
+duration = 500
+hidden = true
+```
+
 ### Web
 
 Navigates to a URL via Chrome DevTools Protocol (chromiumoxide). Requires Chrome or Chromium to be installed.

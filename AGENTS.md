@@ -22,6 +22,7 @@ crates/
 - `capture/web.rs` — Chrome DevTools Protocol via chromiumoxide
 - `capture/terminal.rs` — PTY-based capture via portable-pty
 - `capture/screen.rs` — native screenshot via xcap
+- `capture/file.rs` — local file rendering via headless Chrome
 - `convert/gif.rs` — PNG→GIF via gifski
 
 ## Setup Commands
@@ -36,7 +37,7 @@ crates/
 - Config is loaded from `teasr.toml` (auto-discovered walking up from cwd)
 - Web capture requires Chrome/Chromium installed on the system
 - Example config exists at `teasr.toml` in the repo root
-- Showcase config in `teasr.toml` captures this project's GitHub page, CLI help, and Finder window
+- Showcase config in `teasr.toml` captures this project's GitHub page, CLI help, Finder window, and file demo
 
 ## Testing
 

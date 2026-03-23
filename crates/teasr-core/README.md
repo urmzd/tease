@@ -8,7 +8,7 @@ This crate is the engine behind the `teasr` CLI. Use it directly to embed teasr 
 
 ```toml
 [dependencies]
-teasr-core = "0.7"
+teasr-core = "0.11"
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -63,7 +63,7 @@ pub struct ResolvedConfig {
 
 ### `SceneConfig`
 
-A tagged enum with variants `Web`, `Screen`, and `Terminal`. Mirrors the `[[scenes]]` TOML entries.
+A tagged enum with variants `Web`, `Screen`, `Terminal`, and `File`. Mirrors the `[[scenes]]` TOML entries.
 
 ### `ServerConfig`
 
@@ -129,6 +129,10 @@ Runs the command in a PTY via portable-pty, collects ANSI output, and delegates 
 ### Screen (`capture::screen`)
 
 Captures a display or region using xcap. Supports display index selection and pixel-precise region cropping.
+
+### File (`capture::file`)
+
+Renders a local file (HTML, SVG, PDF, etc.) in headless Chrome and captures a screenshot. No dev server required.
 
 ## GIF Conversion (`convert::gif`)
 
