@@ -72,3 +72,14 @@ formats = [{ output_type = "png" }]
 
 [[scenes.interactions]]
 type = "snapshot"
+
+# ── File: local HTML rendered via headless Chrome ──
+[[scenes]]
+type = "file"
+path = "./showcase/file-demo.html"
+name = "file-demo"
+viewport = { width = 800, height = 600 }
+formats = [{ output_type = "png" }]
+
+[[scenes.interactions]]
+type = "snapshot"

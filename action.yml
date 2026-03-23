@@ -1,0 +1,121 @@
+name: "teasr"
+description: "Capture project showcase assets (screenshots, GIFs) from teasr.toml"
+author: "urmzd"
+
+branding:
+  icon: "camera"
+  color: "purple"
+
+inputs:
+  version:
+    description: "teasr version to install (e.g. '0.11.0'). Defaults to latest release."
+    required: false
+    default: "latest"
+  config:
+    description: "Path to teasr.toml (default: auto-discover)"
+    required: false
+  scenes:
+    description: "Comma-separated scene names to capture (default: all)"
+    required: false
+  args:
+    description: "Additional arguments passed to `teasr showme`"
+    required: false
+  install-chrome:
+    description: "Whether to install Chrome (set to 'false' if already available)"
+    required: false
+    default: "true"
+  install-fonts:
+    description: "Space-separated font families to install via `teasr setup --fonts`"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Determine platform
+      id: platform
+      shell: bash
+      run: |
+        case "$RUNNER_OS-$RUNNER_ARCH" in
+          Linux-X64)    target="x86_64-unknown-linux-gnu"   ; ext="tar.gz" ;;
+          Linux-ARM64)  target="aarch64-unknown-linux-gnu"  ; ext="tar.gz" ;;
+          macOS-X64)    target="x86_64-apple-darwin"         ; ext="tar.gz" ;;
+          macOS-ARM64)  target="aarch64-apple-darwin"        ; ext="tar.gz" ;;
+          Windows-X64)  target="x86_64-pc-windows-msvc"     ; ext="zip"    ;;
+          Windows-ARM64) target="aarch64-pc-windows-msvc"   ; ext="zip"    ;;
+          *)            echo "::error::Unsupported platform: $RUNNER_OS-$RUNNER_ARCH" ; exit 1 ;;
+        esac
+        echo "target=$target" >> "$GITHUB_OUTPUT"
+        echo "ext=$ext"       >> "$GITHUB_OUTPUT"
+
+    - name: Download teasr
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+        TARGET: ${{ steps.platform.outputs.target }}
+        EXT: ${{ steps.platform.outputs.ext }}
+      run: |
+        REPO="urmzd/teasr"
+
+        if [ "$INPUT_VERSION" = "latest" ]; then
+          DOWNLOAD_URL=$(
+            curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
+              | grep -o "https://github.com/$REPO/releases/download/[^\"]*${TARGET}.${EXT}" \
+              | head -1
+          )
+        else
+          TAG="v${INPUT_VERSION#v}"
+          DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/teasr-${TARGET}.${EXT}"
+        fi
+
+        echo "Downloading $DOWNLOAD_URL"
+        curl -fsSL -o "teasr-archive.${EXT}" "$DOWNLOAD_URL"
+
+        if [ "$EXT" = "tar.gz" ]; then
+          tar xzf "teasr-archive.${EXT}"
+          chmod +x teasr
+          sudo mv teasr /usr/local/bin/
+        else
+          7z x "teasr-archive.${EXT}" -oextracted
+          mv extracted/teasr.exe /usr/local/bin/
+          rm -rf extracted
+        fi
+        rm -f "teasr-archive.${EXT}"
+
+        teasr --version
+
+    - name: Install Chrome
+      if: inputs.install-chrome == 'true'
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
+
+    - name: Install fonts
+      if: inputs.install-fonts != ''
+      shell: bash
+      env:
+        FONTS: ${{ inputs.install-fonts }}
+      run: teasr setup --fonts "$FONTS"
+
+    - name: Run teasr
+      shell: bash
+      env:
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_SCENES: ${{ inputs.scenes }}
+        INPUT_ARGS: ${{ inputs.args }}
+      run: |
+        args=(showme)
+
+        if [ -n "$INPUT_CONFIG" ]; then
+          args+=(--config "$INPUT_CONFIG")
+        fi
+
+        if [ -n "$INPUT_SCENES" ]; then
+          args+=(--scenes "$INPUT_SCENES")
+        fi
+
+        if [ -n "$INPUT_ARGS" ]; then
+          # shellcheck disable=SC2206
+          args+=($INPUT_ARGS)
+        fi
+
+        teasr "${args[@]}"

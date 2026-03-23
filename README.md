@@ -7,7 +7,7 @@
     &middot;
     <a href="https://github.com/urmzd/teasr/issues">Report Bug</a>
     &middot;
-    <a href="https://github.com/urmzd/teasr/blob/main/.github/actions/teasr/action.yml">CI Integration</a>
+    <a href="https://github.com/urmzd/teasr/blob/main/action.yml">CI Integration</a>
   </p>
 </p>
 
@@ -17,20 +17,24 @@
 
 ## Showcase
 
-<p align="center">
-  <strong>Web Capture</strong><br>
-  <img src="showcase/github.gif" alt="Web capture of this project's GitHub page" width="600">
-</p>
-
-<p align="center">
-  <strong>Terminal Capture</strong><br>
-  <img src="showcase/cli-help.gif" alt="Terminal capture of CLI help" width="600">
-</p>
-
-<p align="center">
-  <strong>Screen Capture</strong><br>
-  <img src="showcase/finder.png" alt="Finder window showing project directory" width="600">
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><strong>Web Capture</strong></td>
+    <td align="center"><strong>Terminal Capture</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="showcase/github.gif" alt="Web capture of this project's GitHub page" width="400"></td>
+    <td align="center"><img src="showcase/cli-help.gif" alt="Terminal capture of CLI help" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Screen Capture</strong></td>
+    <td align="center"><strong>File Capture</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="showcase/finder.png" alt="Finder window showing project directory" width="400"></td>
+    <td align="center"><img src="showcase/file-demo.png" alt="Local HTML file rendered via headless Chrome" width="400"></td>
+  </tr>
+</table>
 
 ## Why teasr
 
@@ -120,7 +124,7 @@ Output files are written to `./showcase/`.
 
 ## Capture Modes
 
-All three capture modes use a unified `[[scenes.interactions]]` syntax. Every interaction type is accepted by every mode — unsupported interactions are silently skipped (visible with `--verbose`).
+All four capture modes use a unified `[[scenes.interactions]]` syntax. Every interaction type is accepted by every mode — unsupported interactions are silently skipped (visible with `--verbose`).
 
 ### Interaction Types
 
@@ -256,6 +260,38 @@ type = "snapshot"
 
 **Supported interactions:** `snapshot`, `wait`
 
+### File
+
+Renders a local file (HTML, SVG, PDF, etc.) in headless Chrome and captures a screenshot — no dev server required. Useful for generating showcase images from static assets, documentation pages, or design mockups that already exist in your repo.
+
+```toml
+[[scenes]]
+type = "file"
+path = "./docs/preview.html"
+name = "docs-preview"
+
+# Optional
+viewport = { width = 800, height = 600 }
+page = 1  # PDF page number (1-indexed)
+formats = [{ output_type = "png" }]
+
+[[scenes.interactions]]
+type = "snapshot"
+```
+
+**File scene fields:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | string | required | Relative or absolute path to the file |
+| `name` | string | filename stem | Output filename base |
+| `viewport` | object | `1280x720` | `{ width, height }` |
+| `page` | integer | `1` | PDF page to capture (1-indexed) |
+| `formats` | array | `output.formats` | Per-scene format override |
+| `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
+
+**Supported interactions:** `snapshot`, `wait`
+
 ## Configuration Reference
 
 ### `[server]`
@@ -279,7 +315,7 @@ formats = [{ output_type = "png" }]  # default: [{ output_type = "png" }]. Optio
 
 ### `[[scenes]]`
 
-Each `[[scenes]]` entry is one of the three types described above. The `type` field is required and must be `"web"`, `"terminal"`, or `"screen"`.
+Each `[[scenes]]` entry is one of the four types described above. The `type` field is required and must be `"web"`, `"terminal"`, `"screen"`, or `"file"`.
 
 Config file discovery walks up from the current directory to the filesystem root, so running `teasr` from any subdirectory of your project will find `teasr.toml` at the root.
 
@@ -326,12 +362,17 @@ Options:
 
 ## CI Integration
 
-The GitHub Action downloads the appropriate pre-built binary, installs Chrome, and runs `teasr showme`. All configuration comes from `teasr.toml`.
+The GitHub Action downloads the appropriate pre-built binary from releases, installs Chrome, and runs `teasr showme`. All configuration comes from `teasr.toml`.
 
 ```yaml
-- uses: urmzd/teasr/.github/actions/teasr@main
+- uses: urmzd/teasr@v1
   with:
-    version: "latest"  # optional, pin to e.g. "0.7.0"
+    version: "latest"        # optional, pin to e.g. "0.11.0"
+    scenes: "web,terminal"   # optional, default: all
+    install-chrome: "true"   # optional, set "false" if Chrome is already available
+    install-fonts: ""        # optional, space-separated font families
+    config: ""               # optional, path to teasr.toml
+    args: ""                 # optional, extra flags for `teasr showme`
 ```
 
 **Supported runners:** `ubuntu-*`, `macos-*`, `windows-*` on x64 and ARM64.
