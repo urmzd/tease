@@ -99,6 +99,15 @@ pub enum Interaction {
     Snapshot { name: Option<String> },
 }
 
+/// Wraps an Interaction with metadata. Hidden steps execute but produce no visible frames.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InteractionStep {
+    #[serde(flatten)]
+    pub interaction: Interaction,
+    #[serde(default)]
+    pub hidden: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ViewportConfig {
     #[serde(default = "default_width")]
@@ -140,7 +149,7 @@ pub enum SceneConfig {
         viewport: Option<ViewportConfig>,
         formats: Option<Vec<OutputFormat>>,
         #[serde(default)]
-        interactions: Vec<Interaction>,
+        interactions: Vec<InteractionStep>,
         frame_duration: Option<u64>,
         #[serde(default)]
         full_page: Option<bool>,
@@ -157,7 +166,7 @@ pub enum SceneConfig {
         #[serde(default = "default_theme")]
         theme: String,
         #[serde(default)]
-        interactions: Vec<Interaction>,
+        interactions: Vec<InteractionStep>,
         frame_duration: Option<u64>,
     },
     Terminal {
@@ -171,7 +180,7 @@ pub enum SceneConfig {
         intro: Option<SplashConfig>,
         outro: Option<SplashConfig>,
         #[serde(default)]
-        interactions: Vec<Interaction>,
+        interactions: Vec<InteractionStep>,
         frame_duration: Option<u64>,
     },
     /// Capture a local file (HTML, PDF, SVG, etc.) rendered in a headless browser.
@@ -243,7 +252,7 @@ impl SceneConfig {
         }
     }
 
-    pub fn interactions(&self) -> &[Interaction] {
+    pub fn interactions(&self) -> &[InteractionStep] {
         match self {
             SceneConfig::Web { interactions, .. } => interactions,
             SceneConfig::Screen { interactions, .. } => interactions,
