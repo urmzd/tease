@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0 (2026-03-23)
+
+### Features
+
+- **terminal**: improve capture environment isolation ([4b4772b](https://github.com/urmzd/teasr/commit/4b4772b8b7c1e3c1c23726968202a71cf3af7a28))
+- **orchestrator**: respect hidden flag when capturing scene ([a3b3ee0](https://github.com/urmzd/teasr/commit/a3b3ee0e73e58a41f979095de7da7db33016480f))
+- **types**: add InteractionStep with hidden flag ([f44e7df](https://github.com/urmzd/teasr/commit/f44e7dfa0e09cc378e88931e546bfe47afb1df6e))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.11.2...v0.12.0)
+
+
 ## 0.11.2 (2026-03-23)
 
 ### Bug Fixes
