@@ -5,7 +5,7 @@ init:
     sr init --merge 2>/dev/null || sr init
 
 install:
-    cargo build --release -p teasr-cli
+    cargo install --path crates/teasr-cli
 
 build:
     cargo build --workspace
