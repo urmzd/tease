@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.2 (2026-03-23)
+
+### Bug Fixes
+
+- **showcase**: use height instead of min-height for reliable centering ([d42c9ee](https://github.com/urmzd/teasr/commit/d42c9ee66295844ec5cde168d30a44d2060b834a))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.11.1...v0.11.2)
+
+
 ## 0.11.1 (2026-03-23)
 
 ### Bug Fixes
