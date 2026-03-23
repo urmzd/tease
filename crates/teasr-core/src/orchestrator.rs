@@ -226,8 +226,11 @@ async fn capture_scene(
             frames.push(backend.snapshot().await?);
         }
 
-        for interaction in scene.interactions() {
-            frames.extend(backend.execute(interaction).await?);
+        for step in scene.interactions() {
+            let step_frames = backend.execute(&step.interaction).await?;
+            if !step.hidden {
+                frames.extend(step_frames);
+            }
         }
 
         // Fallback: at least one frame
