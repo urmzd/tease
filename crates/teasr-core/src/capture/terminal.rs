@@ -105,8 +105,13 @@ impl CaptureBackend for TerminalBackend {
             cmd.arg("-li");
         }
 
-        let tmp = tempfile::tempdir().context("failed to create temp home")?;
-        cmd.env("HOME", tmp.path().to_str().unwrap_or("/tmp"));
+        // Point shell rc dirs to an empty temp dir so startup files don't pollute
+        // the recording, but keep the real HOME so tools find their auth/config.
+        let rc_dir = tempfile::tempdir().context("failed to create temp rc dir")?;
+        let rc_path = rc_dir.path().to_str().unwrap_or("/tmp");
+        cmd.env("ZDOTDIR", rc_path); // zsh reads rc from ZDOTDIR instead of HOME
+        cmd.env("BASH_ENV", "");
+        cmd.env("ENV", ""); // sh/dash
         cmd.env("HISTFILE", "/dev/null");
         cmd.env("TERM", "xterm-256color");
         cmd.env("FORCE_COLOR", "1");
@@ -157,26 +162,53 @@ impl CaptureBackend for TerminalBackend {
         // Wait for shell prompt
         thread::sleep(Duration::from_millis(200));
 
-        // cd into cwd (default: process working directory) and clear the screen
-        {
+        // Resolve the target working directory
+        let abs_cwd = {
             let cwd = self.cwd.clone().unwrap_or_else(|| ".".to_string());
-            let cwd = &cwd;
-            use std::io::Write;
-            let abs_cwd = std::path::Path::new(cwd);
-            let abs_cwd = if abs_cwd.is_relative() {
+            let p = std::path::Path::new(&cwd);
+            if p.is_relative() {
                 std::env::current_dir()
                     .context("failed to get current dir")?
-                    .join(abs_cwd)
+                    .join(p)
             } else {
-                abs_cwd.to_path_buf()
-            };
-            let abs_cwd = abs_cwd.to_string_lossy();
+                p.to_path_buf()
+            }
+        };
+
+        // Copy the cwd to a temp dir so the demo can't break the real files
+        let effective_cwd = {
+            let copy_dir = tempfile::tempdir().context("failed to create copy dir")?;
+            let copy_path = copy_dir.path().join("repo");
+            let status = std::process::Command::new("cp")
+                .args(["-a"])
+                .arg(&abs_cwd)
+                .arg(&copy_path)
+                .status()
+                .context("failed to copy working directory")?;
+            if !status.success() {
+                anyhow::bail!("cp -a failed (exit {})", status);
+            }
+            debug!("copied {} -> {}", abs_cwd.display(), copy_path.display());
+            // Leak the tempdir so it lives until process exit
+            std::mem::forget(copy_dir);
+            copy_path
+        };
+
+        // cd into the effective cwd and clear the screen
+        {
+            use std::io::Write;
             let writer = self.writer.as_mut().unwrap();
             writer
-                .write_all(format!("cd {} && clear\n", shell_escape(&abs_cwd)).as_bytes())
+                .write_all(
+                    format!(
+                        "cd {} && clear\n",
+                        shell_escape(&effective_cwd.to_string_lossy())
+                    )
+                    .as_bytes(),
+                )
                 .context("failed to cd into cwd")?;
-            thread::sleep(Duration::from_millis(200));
-            // Drain the buffer so the cd command doesn't appear in output
+            thread::sleep(Duration::from_millis(500));
+            // Drain the buffer so the cd/clone doesn't appear in output
             if let Some(ref buffer) = self.buffer {
                 buffer.lock().unwrap().clear();
             }
@@ -190,7 +222,7 @@ impl CaptureBackend for TerminalBackend {
         }
 
         // Keep the tempdir alive by leaking it (it'll be cleaned up on process exit)
-        std::mem::forget(tmp);
+        std::mem::forget(rc_dir);
 
         Ok(())
     }
