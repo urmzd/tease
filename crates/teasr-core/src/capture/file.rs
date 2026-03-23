@@ -73,7 +73,7 @@ impl CaptureBackend for FileBackend {
             .window_size(self.viewport.width, self.viewport.height)
             .no_sandbox();
 
-        // Disable Chrome's PDF viewer extension so PDFs render as page content
+        // Disable Chrome extensions/plugins for cleaner PDF rendering
         if self.is_pdf() {
             config_builder = config_builder
                 .arg("--disable-extensions")
@@ -98,11 +98,14 @@ impl CaptureBackend for FileBackend {
             .context("failed to create page")?;
 
         if self.is_pdf() {
-            // Navigate to PDF page via fragment
+            // Navigate to PDF with viewer UI hidden via PDF open parameters
             let url = if self.page_number > 1 {
-                format!("{}#page={}", file_url, self.page_number)
+                format!(
+                    "{}#page={}&toolbar=0&navpanes=0&scrollbar=0",
+                    file_url, self.page_number
+                )
             } else {
-                file_url
+                format!("{}#toolbar=0&navpanes=0&scrollbar=0", file_url)
             };
             page.goto(&url).await.context("navigation failed")?;
             // PDFs need extra time to render
