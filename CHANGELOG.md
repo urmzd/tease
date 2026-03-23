@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.11.1 (2026-03-23)
+
+### Bug Fixes
+
+- **capture**: always cd into cwd with sensible default ([708b69f](https://github.com/urmzd/teasr/commit/708b69f7c772e0cd718010ae80f53944427ff81f))
+- **terminal**: default font to monospace for universal availability ([a32eab6](https://github.com/urmzd/teasr/commit/a32eab689732a088248ea8bc5f7c300042ad864f))
+- **file**: hide PDF viewer UI in screenshots ([62c8921](https://github.com/urmzd/teasr/commit/62c8921eb26c121239e91308151b0e715ce1a6f5))
+
+### Documentation
+
+- update showcase media assets and add file demo ([b24bbc3](https://github.com/urmzd/teasr/commit/b24bbc328195e57ec695837be1f072083e90c514))
+
+### Miscellaneous
+
+- **release**: bump versions to 0.11.0 ([268fda3](https://github.com/urmzd/teasr/commit/268fda31ee383f8f6cf86940458e79d2bb1c2d7c))
+- **build**: install cli directly from local path ([c96b3f2](https://github.com/urmzd/teasr/commit/c96b3f2733ce7c3f5b472ad95fe0347ddc072ceb))
+- **justfile**: add Justfile with standardized recipes ([860c404](https://github.com/urmzd/teasr/commit/860c4045c76073d697f145aad3419411a370a5ec))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.11.0...v0.11.1)
+
+
 ## 0.11.0 (2026-03-22)
 
 ### Features
