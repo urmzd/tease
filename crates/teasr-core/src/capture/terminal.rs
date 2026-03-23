@@ -157,8 +157,10 @@ impl CaptureBackend for TerminalBackend {
         // Wait for shell prompt
         thread::sleep(Duration::from_millis(200));
 
-        // If cwd is set, cd into it and clear the screen so it looks clean
-        if let Some(ref cwd) = self.cwd {
+        // cd into cwd (default: process working directory) and clear the screen
+        {
+            let cwd = self.cwd.clone().unwrap_or_else(|| ".".to_string());
+            let cwd = &cwd;
             use std::io::Write;
             let abs_cwd = std::path::Path::new(cwd);
             let abs_cwd = if abs_cwd.is_relative() {
