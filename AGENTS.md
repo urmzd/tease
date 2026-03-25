@@ -64,7 +64,7 @@ All tests and clippy must pass before merging. CI enforces this.
   3. `cargo test --workspace`
 - Release pipeline (`.github/workflows/release.yml`) builds for 6 targets: Linux x64/ARM64, macOS x64/ARM64, Windows x64/ARM64
 - GitHub Action at `.github/actions/teasr/action.yml`
-- Versioning via `urmzd/semantic-release@v1` with config in `sr.yaml`
+- Versioning via `urmzd/sr@v2` with config in `sr.yaml`
 
 ## Commit Convention
 
