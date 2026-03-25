@@ -5,7 +5,8 @@ description: >
   Use this skill when you need to generate project showcase assets, capture terminal
   output as styled PNGs, take web page screenshots via Chrome DevTools Protocol, or
   configure teasr.toml for automated capture pipelines.
-argument-hint: [--formats png,gif] [--output dir]
+metadata:
+  argument-hint: [--formats png,gif] [--output dir]
 ---
 
 # teasr — Project Showcase Capture
