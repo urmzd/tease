@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: __VP_W__px;
+  height: __VP_H__px;
+}
+.window {
+  width: __WIN_W__px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+}
+.chrome {
+  height: 40px;
+  background: __CHROME_BG__;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: relative;
+}
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.btn-close { background: __BTN_CLOSE__; }
+.btn-min { background: __BTN_MIN__; }
+.btn-max { background: __BTN_MAX__; }
+.title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 13px;
+  color: __FG__;
+  pointer-events: none;
+}
+.content {
+  background: __BG__;
+  padding: 16px;
+}
+.content img {
+  display: block;
+  width: __IMG_W__px;
+  height: __IMG_H__px;
+}
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="chrome">
+    <div class="buttons">
+      <div class="btn btn-close"></div>
+      <div class="btn btn-min"></div>
+      <div class="btn btn-max"></div>
+    </div>
+    <div class="title">__TITLE__</div>
+  </div>
+  <div class="content">
+    <img src="data:image/png;base64,__B64__">
+  </div>
+</div>
+</body>
+</html>

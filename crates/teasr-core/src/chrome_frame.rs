@@ -36,97 +36,20 @@ pub async fn render_with_chrome_frame(
     let title_text = title.unwrap_or("Screen Capture");
     let b64 = base64::engine::general_purpose::STANDARD.encode(png_data);
 
-    let html = format!(
-        r#"<!DOCTYPE html>
-<html>
-<head>
-<style>
-* {{ margin: 0; padding: 0; box-sizing: border-box; }}
-body {{
-  background: transparent;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: {vp_w}px;
-  height: {vp_h}px;
-}}
-.window {{
-  width: {win_w}px;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
-}}
-.chrome {{
-  height: 40px;
-  background: {chrome_bg};
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  position: relative;
-}}
-.buttons {{
-  display: flex;
-  gap: 8px;
-}}
-.btn {{
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}}
-.btn-close {{ background: {btn_close}; }}
-.btn-min {{ background: {btn_min}; }}
-.btn-max {{ background: {btn_max}; }}
-.title {{
-  position: absolute;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  font-size: 13px;
-  color: {fg};
-  pointer-events: none;
-}}
-.content {{
-  background: {bg};
-  padding: 16px;
-}}
-.content img {{
-  display: block;
-  width: {img_w}px;
-  height: {img_h}px;
-}}
-</style>
-</head>
-<body>
-<div class="window">
-  <div class="chrome">
-    <div class="buttons">
-      <div class="btn btn-close"></div>
-      <div class="btn btn-min"></div>
-      <div class="btn btn-max"></div>
-    </div>
-    <div class="title">{title}</div>
-  </div>
-  <div class="content">
-    <img src="data:image/png;base64,{b64}">
-  </div>
-</div>
-</body>
-</html>"#,
-        vp_w = render_w + 32 + 80,  // content padding (16*2) + body padding (40*2)
-        vp_h = render_h + 40 + 32 + 80,  // chrome + content padding + body padding
-        win_w = render_w + 32,  // content padding
-        chrome_bg = chrome_bg,
-        btn_close = btn_close,
-        btn_min = btn_min,
-        btn_max = btn_max,
-        fg = fg,
-        bg = bg,
-        img_w = render_w,
-        img_h = render_h,
-        title = title_text,
-        b64 = b64,
-    );
+    let html = include_str!("chrome_frame.html")
+        .replace("__VP_W__", &(render_w + 32 + 80).to_string()) // content padding (16*2) + body padding (40*2)
+        .replace("__VP_H__", &(render_h + 40 + 32 + 80).to_string()) // chrome + content padding + body padding
+        .replace("__WIN_W__", &(render_w + 32).to_string()) // content padding
+        .replace("__CHROME_BG__", chrome_bg)
+        .replace("__BTN_CLOSE__", btn_close)
+        .replace("__BTN_MIN__", btn_min)
+        .replace("__BTN_MAX__", btn_max)
+        .replace("__FG__", fg)
+        .replace("__BG__", bg)
+        .replace("__IMG_W__", &render_w.to_string())
+        .replace("__IMG_H__", &render_h.to_string())
+        .replace("__TITLE__", title_text)
+        .replace("__B64__", &b64);
 
     let tmp = std::env::temp_dir().join(format!("teasr-frame-{}.html", std::process::id()));
     std::fs::write(&tmp, html.as_bytes()).context("failed to write temp HTML for chrome frame")?;
