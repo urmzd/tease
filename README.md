@@ -408,9 +408,7 @@ teasr is a Cargo workspace with three crates:
 
 ## Agent Skill
 
-```bash
-npx skills add urmzd/teasr
-```
+This repo's conventions are available as portable agent skills in [`skills/`](skills/).
 
 ## License
 
