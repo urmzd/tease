@@ -1,9 +1,12 @@
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
+use std::time::Instant;
+use tempfile::NamedTempFile;
 use tracing::debug;
 
 use crate::backend::CaptureBackend;
 use crate::capture;
+use crate::render;
 use crate::server::ManagedServer;
 use crate::types::{
     CaptureResult, CapturedFrame, FontConfig, OutputFormat, ResolvedConfig, SceneConfig,
@@ -12,15 +15,18 @@ use crate::types::{
 use crate::ui;
 
 /// Build a backend for the given scene config.
+///
+/// Returns the backend and an optional temp file that must outlive the capture
+/// (used when markdown is rendered to a temporary HTML file).
 fn build_backend(
     scene: &SceneConfig,
     global_viewport: &ViewportConfig,
     server: Option<&crate::types::ServerConfig>,
     global_frame_duration_ms: u64,
     global_font: &FontConfig,
-) -> Box<dyn CaptureBackend> {
+) -> Result<(Box<dyn CaptureBackend>, Option<NamedTempFile>)> {
     let default_fd = global_frame_duration_ms;
-    match scene {
+    let result = match scene {
         SceneConfig::Terminal {
             theme,
             cols,
@@ -32,7 +38,7 @@ fn build_backend(
             ..
         } => {
             let effective_font = font.as_ref().unwrap_or(global_font);
-            Box::new(capture::terminal::TerminalBackend::new(
+            let backend: Box<dyn CaptureBackend> = Box::new(capture::terminal::TerminalBackend::new(
                 cols.unwrap_or(80),
                 *rows,
                 theme.as_deref().unwrap_or("dracula"),
@@ -41,7 +47,8 @@ fn build_backend(
                 cwd.clone(),
                 Some(effective_font.family.clone()),
                 Some(effective_font.size),
-            ))
+            ));
+            (backend, None)
         }
         SceneConfig::Web {
             url,
@@ -60,12 +67,13 @@ fn build_backend(
             } else {
                 url.clone()
             };
-            Box::new(capture::web::WebBackend::new(
+            let backend: Box<dyn CaptureBackend> = Box::new(capture::web::WebBackend::new(
                 full_url,
                 vp,
                 frame_duration.unwrap_or(default_fd),
                 full_page.unwrap_or(false),
-            ))
+            ));
+            (backend, None)
         }
         SceneConfig::Screen {
             display,
@@ -77,16 +85,19 @@ fn build_backend(
             title,
             theme,
             ..
-        } => Box::new(capture::screen::ScreenBackend::new(
-            *display,
-            window.clone(),
-            region.clone(),
-            frame_duration.unwrap_or(default_fd),
-            setup.clone(),
-            *delay,
-            title.clone(),
-            theme.clone(),
-        )),
+        } => {
+            let backend: Box<dyn CaptureBackend> = Box::new(capture::screen::ScreenBackend::new(
+                *display,
+                window.clone(),
+                region.clone(),
+                frame_duration.unwrap_or(default_fd),
+                setup.clone(),
+                *delay,
+                title.clone(),
+                theme.clone(),
+            ));
+            (backend, None)
+        }
         SceneConfig::File {
             path,
             viewport,
@@ -95,14 +106,46 @@ fn build_backend(
             ..
         } => {
             let vp = viewport.as_ref().unwrap_or(global_viewport).clone();
-            Box::new(capture::file::FileBackend::new(
+            let backend: Box<dyn CaptureBackend> = Box::new(capture::file::FileBackend::new(
                 path,
                 vp,
                 frame_duration.unwrap_or(default_fd),
                 *page,
-            ))
+                false,
+            ));
+            (backend, None)
         }
-    }
+        SceneConfig::Markdown {
+            path,
+            viewport,
+            frame_duration,
+            flavor,
+            theme,
+            stylesheet,
+            template,
+            full_page,
+            ..
+        } => {
+            let vp = viewport.as_ref().unwrap_or(global_viewport).clone();
+            let tmp = render::markdown::render_to_html(
+                Path::new(path),
+                flavor,
+                theme,
+                stylesheet.as_deref().map(Path::new),
+                template.as_deref().map(Path::new),
+                vp.width,
+            )?;
+            let backend: Box<dyn CaptureBackend> = Box::new(capture::file::FileBackend::new(
+                tmp.path(),
+                vp,
+                frame_duration.unwrap_or(default_fd),
+                1,
+                *full_page,
+            ));
+            (backend, Some(tmp))
+        }
+    };
+    Ok(result)
 }
 
 /// Run all scenes in order and return capture results.
@@ -142,6 +185,7 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
             scene.scene_type()
         );
         let pb = ui::spinner(&label);
+        let start = Instant::now();
 
         match capture_scene(
             scene,
@@ -156,7 +200,8 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
         .await
         {
             Ok(result) => {
-                let detail = format!("{} frames", result.files.len());
+                let elapsed = start.elapsed();
+                let detail = format!("{} frames in {:.1}s", result.files.len(), elapsed.as_secs_f64());
                 ui::spinner_done(&pb, Some(&detail));
                 results.push(result);
             }
@@ -195,7 +240,7 @@ async fn capture_scene(
         .as_ref()
         .unwrap_or(&output_config.formats);
 
-    let mut backend = build_backend(scene, global_viewport, server, global_frame_duration_ms, global_font);
+    let (mut backend, _tmp_file) = build_backend(scene, global_viewport, server, global_frame_duration_ms, global_font)?;
     backend.setup().await?;
 
     let capture_fut = async {

@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">teasr</h1>
   <p align="center">
-    Automated project showcase capture — screenshots and GIFs from web apps, desktop, and terminal. Single binary, no runtime dependencies.
+    Automated project showcase capture — screenshots and GIFs from web apps, desktop, terminal, and markdown. Single binary, no runtime dependencies.
     <br /><br />
     <a href="https://github.com/urmzd/teasr/releases">Download</a>
     &middot;
@@ -124,7 +124,7 @@ Output files are written to `./showcase/`.
 
 ## Capture Modes
 
-All four capture modes use a unified `[[scenes.interactions]]` syntax. Every interaction type is accepted by every mode — unsupported interactions are silently skipped (visible with `--verbose`).
+All five capture modes use a unified `[[scenes.interactions]]` syntax. Every interaction type is accepted by every mode — unsupported interactions are silently skipped (visible with `--verbose`).
 
 ### Interaction Types
 
@@ -311,6 +311,70 @@ type = "snapshot"
 
 **Supported interactions:** `snapshot`, `wait`
 
+### Markdown
+
+Renders a `.md` file as a styled HTML page in headless Chrome and captures a screenshot or GIF — no dev server or external tooling required. Markdown is converted to HTML using [comrak](https://github.com/nickel-lang/comrak), wrapped in a GitHub-style template, and delegated to the same Chrome-based capture used by `file` scenes. Useful for showcasing README files, changelogs, and documentation pages.
+
+```toml
+# GitHub-flavored markdown, light theme (defaults)
+[[scenes]]
+type = "markdown"
+path = "./README.md"
+name = "readme"
+
+# Dark theme
+[[scenes]]
+type = "markdown"
+path = "./README.md"
+theme = "dark"
+
+# Strict CommonMark
+[[scenes]]
+type = "markdown"
+path = "./SPEC.md"
+flavor = "commonmark"
+
+# Custom stylesheet, full-page capture
+[[scenes]]
+type = "markdown"
+path = "./docs/guide.md"
+flavor = "custom"
+stylesheet = "./docs/custom.css"
+full_page = true
+
+# Full template control
+[[scenes]]
+type = "markdown"
+path = "./docs/guide.md"
+template = "./docs/template.html"
+```
+
+**Markdown scene fields:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | string | required | Relative or absolute path to the `.md` file |
+| `name` | string | filename stem | Output filename base |
+| `viewport` | object | `1280x720` | `{ width, height }` |
+| `flavor` | string | `"github"` | Markdown parsing flavor: `"github"`, `"commonmark"`, or `"custom"` |
+| `theme` | string | `"light"` | Color theme: `"light"` (GitHub light) or `"dark"` (GitHub dark) |
+| `stylesheet` | string | — | Path to a custom CSS file appended after default styles |
+| `template` | string | — | Path to a full HTML template with a `{{content}}` placeholder; overrides the default template entirely |
+| `full_page` | boolean | `false` | Capture the full rendered page height instead of just the viewport |
+| `formats` | array | `output.formats` | Per-scene format override |
+| `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
+| `interactions` | array | `[]` | Sequence of interactions |
+
+**Markdown flavor details:**
+
+| Flavor | Behavior |
+|--------|----------|
+| `github` | GitHub Flavored Markdown — tables, task lists, autolinks, strikethrough, footnotes |
+| `commonmark` | Strict CommonMark — no extensions |
+| `custom` | GFM extensions enabled; pair with `stylesheet` to apply your own visual style |
+
+**Supported interactions:** `snapshot`, `wait`
+
 ## Configuration Reference
 
 ### `[server]`
@@ -334,7 +398,7 @@ formats = [{ output_type = "png" }]  # default: [{ output_type = "png" }]. Optio
 
 ### `[[scenes]]`
 
-Each `[[scenes]]` entry is one of the four types described above. The `type` field is required and must be `"web"`, `"terminal"`, `"screen"`, or `"file"`.
+Each `[[scenes]]` entry is one of the five types described above. The `type` field is required and must be `"web"`, `"terminal"`, `"screen"`, `"file"`, or `"markdown"`.
 
 Config file discovery walks up from the current directory to the filesystem root, so running `teasr` from any subdirectory of your project will find `teasr.toml` at the root.
 

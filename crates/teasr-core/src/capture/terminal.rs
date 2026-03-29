@@ -262,17 +262,38 @@ impl CaptureBackend for TerminalBackend {
                     duration_ms: self.frame_duration,
                 }])
             }
-            Interaction::Wait { duration } => {
+            Interaction::Wait { duration, idle_timeout } => {
                 let interval = self.frame_duration.max(50);
                 let steps = (*duration / interval).max(1);
                 let step_ms = *duration / steps;
                 let mut frames = Vec::new();
+                let mut idle_ms: u64 = 0;
+                let idle_limit = idle_timeout.unwrap_or(u64::MAX);
+
                 for _ in 0..steps {
                     thread::sleep(Duration::from_millis(step_ms));
+
+                    // Check if new data arrived before draining
+                    let has_new_data = self
+                        .buffer
+                        .as_ref()
+                        .map_or(false, |b| !b.lock().unwrap().is_empty());
+
+                    if has_new_data {
+                        idle_ms = 0;
+                    } else {
+                        idle_ms += step_ms;
+                    }
+
                     frames.push(CapturedFrame {
                         png_data: self.drain_and_snapshot()?,
                         duration_ms: step_ms,
                     });
+
+                    if idle_ms >= idle_limit {
+                        debug!("idle timeout reached ({}ms idle), ending wait early", idle_ms);
+                        break;
+                    }
                 }
                 Ok(frames)
             }

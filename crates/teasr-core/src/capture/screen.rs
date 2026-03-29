@@ -128,7 +128,7 @@ impl CaptureBackend for ScreenBackend {
                     duration_ms: self.frame_duration,
                 }])
             }
-            Interaction::Wait { duration } => {
+            Interaction::Wait { duration, .. } => {
                 tokio::time::sleep(std::time::Duration::from_millis(*duration)).await;
                 Ok(vec![])
             }
