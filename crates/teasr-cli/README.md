@@ -1,4 +1,4 @@
-# teasr-cli
+# teasr
 
 The `teasr` binary. A thin CLI wrapper around `teasr-core` using clap derive.
 
@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/urmzd/teasr/main/install.sh | bash
 **Cargo:**
 
 ```bash
-cargo install teasr-cli
+cargo install teasr
 ```
 
 **GitHub Action:** see the [root README](../../README.md#ci-integration).

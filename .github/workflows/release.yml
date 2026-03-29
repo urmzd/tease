@@ -3,13 +3,33 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
-permissions:
-  contents: write
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  release:
+  embed-src:
+    name: Embed-src
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: urmzd/embed-src@v3
+        with:
+          commit-message: "chore: sync embedded files [skip ci]"
+
+  ci:
+    needs: embed-src
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: [ci, embed-src]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       released: ${{ steps.sr.outputs.released }}
       version: ${{ steps.sr.outputs.version }}
@@ -34,6 +54,34 @@ jobs:
           command: release
           github-token: ${{ steps.app-token.outputs.token }}
 
+  publish:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: |
+          cargo publish -p teasr-term-render --allow-dirty
+          sleep 30
+          cargo publish -p teasr-core --allow-dirty
+          sleep 30
+          cargo publish -p teasr --allow-dirty
+
   build:
     needs: release
     if: needs.release.outputs.released == 'true'
@@ -41,18 +89,27 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+            runner: ubuntu-latest
+            cross: false
           - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
+            runner: ubuntu-latest
+            cross: true
           - target: x86_64-apple-darwin
-            os: macos-latest
+            runner: macos-latest
+            cross: false
           - target: aarch64-apple-darwin
-            os: macos-latest
+            runner: macos-latest
+            cross: false
           - target: x86_64-pc-windows-msvc
-            os: windows-latest
+            runner: windows-latest
+            cross: false
           - target: aarch64-pc-windows-msvc
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
+            runner: windows-latest
+            cross: false
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +120,8 @@ jobs:
           targets: ${{ matrix.target }}
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
@@ -70,39 +129,30 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwayland-dev libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xfixes0-dev libxkbcommon-dev libdbus-1-dev libpipewire-0.3-dev libegl-dev libgl-dev libgbm-dev libvulkan-dev
 
-      - name: Install cross (Linux ARM)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Install cross
+        if: matrix.cross
+        run: cargo install cross --locked
 
-      - name: Build (native)
-        if: matrix.target != 'aarch64-unknown-linux-gnu'
-        run: cargo build --release --target ${{ matrix.target }} -p teasr-cli
-
-      - name: Build (cross)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: cross build --release --target ${{ matrix.target }} -p teasr-cli
-
-      - name: Package (Unix)
-        if: runner.os != 'Windows'
+      - name: Build
         run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ../../../teasr-${{ matrix.target }}.tar.gz teasr
-          cd ../../..
-
-      - name: Package (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          cd target/${{ matrix.target }}/release
-          7z a ../../../teasr-${{ matrix.target }}.zip teasr.exe
-          cd ../../..
-
-      - name: Upload release asset
+          if [ "${{ matrix.cross }}" = "true" ]; then
+            cross build --release --target ${{ matrix.target }} -p teasr
+          else
+            cargo build --release --target ${{ matrix.target }} -p teasr
+          fi
         shell: bash
+
+      - name: Upload to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          shopt -s nullglob
-          files=(teasr-*.tar.gz teasr-*.zip)
-          if [ ${#files[@]} -gt 0 ]; then
-            gh release upload ${{ needs.release.outputs.tag }} "${files[@]}"
+          TAG="${{ needs.release.outputs.tag }}"
+          if [ -f "target/${{ matrix.target }}/release/teasr.exe" ]; then
+            cp "target/${{ matrix.target }}/release/teasr.exe" "teasr-${{ matrix.target }}.exe"
+            gh release upload "$TAG" "teasr-${{ matrix.target }}.exe" --clobber
+          else
+            cp "target/${{ matrix.target }}/release/teasr" "teasr-${{ matrix.target }}"
+            chmod +x "teasr-${{ matrix.target }}"
+            gh release upload "$TAG" "teasr-${{ matrix.target }}" --clobber
           fi
+        shell: bash
