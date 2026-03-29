@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.14.1 (2026-03-29)
+
+### Bug Fixes
+
+- remove version pin from teasr-core path dependency in teasr-cli ([80acccb](https://github.com/urmzd/teasr/commit/80acccbb5d6e1a72170349ea003dceaf20a7b5c8))
+- remove version pin from teasr-term-render path dependency ([f69b87e](https://github.com/urmzd/teasr/commit/f69b87e6c71929313a3cb7d344e8fe74aa004060))
+
+### Refactoring
+
+- rename teasr-cli to teasr and add publish pipeline ([29a1617](https://github.com/urmzd/teasr/commit/29a1617200c8caa82bc1d4a584b25e3be73940c4))
+
+### Miscellaneous
+
+- standardize CI/CD — add refactor bump, CI gate, workflow_dispatch ([6231bc3](https://github.com/urmzd/teasr/commit/6231bc32ef4986969354119e810585e7982e57f6))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.14.0...v0.14.1)
+
+
 ## 0.14.0 (2026-03-29)
 
 ### Features
