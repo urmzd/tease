@@ -15,6 +15,7 @@ pub struct FileBackend {
     viewport: ViewportConfig,
     frame_duration: u64,
     page_number: u32,
+    full_page: bool,
     browser: Option<Browser>,
     page: Option<chromiumoxide::Page>,
     handler: Option<JoinHandle<()>>,
@@ -26,12 +27,14 @@ impl FileBackend {
         viewport: ViewportConfig,
         frame_duration: u64,
         page_number: u32,
+        full_page: bool,
     ) -> Self {
         Self {
             path: path.into(),
             viewport,
             frame_duration,
             page_number,
+            full_page,
             browser: None,
             page: None,
             handler: None,
@@ -49,7 +52,7 @@ impl FileBackend {
         page.screenshot(
             chromiumoxide::page::ScreenshotParams::builder()
                 .format(CaptureScreenshotFormat::Png)
-                .full_page(false)
+                .full_page(self.full_page)
                 .build(),
         )
         .await
@@ -124,7 +127,7 @@ impl CaptureBackend for FileBackend {
 
     async fn execute(&mut self, interaction: &Interaction) -> Result<Vec<CapturedFrame>> {
         match interaction {
-            Interaction::Wait { duration } => {
+            Interaction::Wait { duration, .. } => {
                 tokio::time::sleep(Duration::from_millis(*duration)).await;
                 Ok(vec![])
             }

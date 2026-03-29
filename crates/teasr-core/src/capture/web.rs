@@ -133,7 +133,7 @@ impl CaptureBackend for WebBackend {
                 }
                 Ok(vec![])
             }
-            Interaction::Wait { duration } => {
+            Interaction::Wait { duration, .. } => {
                 tokio::time::sleep(Duration::from_millis(*duration)).await;
                 Ok(vec![])
             }
