@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.13.0 (2026-03-29)
+
+### Features
+
+- **orchestrator**: integrate markdown scenes and manage temp files ([1fc7ad6](https://github.com/urmzd/teasr/commit/1fc7ad607ee844fa457667e578fd97ad69ca42c0))
+- **capture**: enhance backends for markdown and idle timeout ([d888113](https://github.com/urmzd/teasr/commit/d888113872675384bff14bde0b1111930d147c42))
+- **render**: implement markdown rendering with HTML templates ([88d177e](https://github.com/urmzd/teasr/commit/88d177e869d9f24f45675c263d5e8c56201b9f0f))
+- **types**: add markdown scene and idle timeout support ([85b761f](https://github.com/urmzd/teasr/commit/85b761f15a7ab11b6b04ac13c17f476053e122f0))
+
+### Documentation
+
+- **readme**: document markdown scene type ([f5daecb](https://github.com/urmzd/teasr/commit/f5daecb08f59054ff576fbe323a28f7ff851c667))
+- update README ([bd09b63](https://github.com/urmzd/teasr/commit/bd09b63f0574afba6b9f834af94525be8172c958))
+- **skills**: align SKILL.md with agentskills.io spec ([64730a0](https://github.com/urmzd/teasr/commit/64730a09c1e6fa179d993a339580c5b1401c1b05))
+- update documentation for hidden flag, file capture, and version bumps ([3a84e75](https://github.com/urmzd/teasr/commit/3a84e755cab4009821bfed2958f9a1218ac5f322))
+
+### Refactoring
+
+- extract chrome frame inline HTML into dedicated template file ([13f86e7](https://github.com/urmzd/teasr/commit/13f86e7dc2413708b4cb9c60ba7956d0b3907f9e))
+
+### Miscellaneous
+
+- **deps**: add comrak for markdown rendering ([4bdcfaa](https://github.com/urmzd/teasr/commit/4bdcfaa688285034f23ce7b61354660c5481031a))
+- rename action for GitHub Marketplace publishing ([43ed988](https://github.com/urmzd/teasr/commit/43ed98869882d3bcd7cc1a413cbcc050c3bdb485))
+- use sr-releaser GitHub App for release workflow (#1) ([9ead7e3](https://github.com/urmzd/teasr/commit/9ead7e3ebf83ed597d269bb97657e36f7c626ebd))
+- update semantic-release action to sr@v2 ([c422534](https://github.com/urmzd/teasr/commit/c422534ac60cfc2a5599b642a1fc771ff9d3ca84))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.12.0...v0.13.0)
+
+
 ## 0.12.0 (2026-03-23)
 
 ### Features
