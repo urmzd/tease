@@ -34,6 +34,12 @@
     <td align="center"><img src="showcase/finder.png" alt="Finder window showing project directory" width="400"></td>
     <td align="center"><img src="showcase/file-demo.png" alt="Local HTML file rendered via headless Chrome" width="400"></td>
   </tr>
+  <tr>
+    <td align="center" colspan="2"><strong>Markdown Capture</strong></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="showcase/markdown-demo.png" alt="README rendered as styled HTML via headless Chrome" width="400"></td>
+  </tr>
 </table>
 
 ## Why teasr
