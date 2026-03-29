@@ -269,7 +269,7 @@ impl CaptureBackend for TerminalBackend {
                 let step_ms = *duration / steps;
                 let mut frames = Vec::new();
                 let mut idle_ms: u64 = 0;
-                let idle_limit = idle_timeout.unwrap_or(u64::MAX);
+                let idle_limit = if *idle_timeout == 0 { u64::MAX } else { *idle_timeout };
 
                 for _ in 0..steps {
                     thread::sleep(Duration::from_millis(step_ms));

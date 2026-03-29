@@ -81,7 +81,11 @@ fn default_mp4_fps() -> u32 {
 }
 
 fn default_wait() -> u64 {
-    1000
+    30000
+}
+
+fn default_idle_timeout() -> u64 {
+    500
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,12 +97,14 @@ pub enum Interaction {
     Hover { selector: Option<String> },
     ScrollTo { selector: Option<String> },
     Wait {
+        /// Maximum time to wait in ms (default: 30000). Acts as a timeout —
+        /// the wait exits early once terminal output has settled.
         #[serde(default = "default_wait")]
         duration: u64,
-        /// Stop waiting early if no new output arrives for this many ms.
-        /// Useful for terminal scenes where you want to wait for a command
-        /// to finish without sitting through the full duration.
-        idle_timeout: Option<u64>,
+        /// Exit early if no new output arrives for this many ms (default: 500).
+        /// Set to 0 to disable idle detection and always wait the full duration.
+        #[serde(default = "default_idle_timeout")]
+        idle_timeout: u64,
     },
     Snapshot { name: Option<String> },
 }
