@@ -83,3 +83,15 @@ formats = [{ output_type = "png" }]
 
 [[scenes.interactions]]
 type = "snapshot"
+
+# ── Markdown: README rendered as styled HTML ──
+[[scenes]]
+type = "markdown"
+path = "./README.md"
+name = "markdown-demo"
+theme = "light"
+viewport = { width = 800, height = 600 }
+formats = [{ output_type = "png" }]
+
+[[scenes.interactions]]
+type = "snapshot"
