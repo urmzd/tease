@@ -29,6 +29,7 @@ futures = "0.3"
 async-trait = "0.1"
 tempfile = "3"
 zip = { version = "2", default-features = false, features = ["deflate"] }
+comrak = { version = "0.36", default-features = false, features = ["syntect"] }
 
 libc = "0.2"
 
