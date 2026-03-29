@@ -95,6 +95,10 @@ pub enum Interaction {
     Wait {
         #[serde(default = "default_wait")]
         duration: u64,
+        /// Stop waiting early if no new output arrives for this many ms.
+        /// Useful for terminal scenes where you want to wait for a command
+        /// to finish without sitting through the full duration.
+        idle_timeout: Option<u64>,
     },
     Snapshot { name: Option<String> },
 }
@@ -194,6 +198,29 @@ pub enum SceneConfig {
         page: u32,
         frame_duration: Option<u64>,
     },
+    /// Render a Markdown file as a styled HTML page and capture it.
+    Markdown {
+        path: String,
+        name: Option<String>,
+        viewport: Option<ViewportConfig>,
+        formats: Option<Vec<OutputFormat>>,
+        /// Markdown parsing flavor: github (default), commonmark, or custom.
+        #[serde(default)]
+        flavor: MarkdownFlavor,
+        /// Color theme: "light" (default) or "dark".
+        #[serde(default = "default_markdown_theme")]
+        theme: MarkdownTheme,
+        /// Path to a custom CSS file applied after the default styles.
+        stylesheet: Option<String>,
+        /// Path to a full HTML template with `{{content}}` placeholder.
+        template: Option<String>,
+        /// Capture the full rendered page instead of just the viewport.
+        #[serde(default)]
+        full_page: bool,
+        frame_duration: Option<u64>,
+        #[serde(default)]
+        interactions: Vec<InteractionStep>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -210,6 +237,27 @@ pub struct SplashConfig {
     /// Center the content vertically and horizontally
     #[serde(default = "default_true")]
     pub center: bool,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MarkdownFlavor {
+    #[default]
+    Github,
+    Commonmark,
+    Custom,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MarkdownTheme {
+    #[default]
+    Light,
+    Dark,
+}
+
+fn default_markdown_theme() -> MarkdownTheme {
+    MarkdownTheme::default()
 }
 
 fn default_page() -> u32 {
@@ -231,6 +279,7 @@ impl SceneConfig {
             SceneConfig::Screen { name, .. } => name.as_deref().unwrap_or("screen"),
             SceneConfig::Terminal { name, .. } => name.as_deref().unwrap_or("recording"),
             SceneConfig::File { name, path, .. } => name.as_deref().unwrap_or(path.as_str()),
+            SceneConfig::Markdown { name, path, .. } => name.as_deref().unwrap_or(path.as_str()),
         }
     }
 
@@ -240,6 +289,7 @@ impl SceneConfig {
             SceneConfig::Screen { formats, .. } => formats,
             SceneConfig::Terminal { formats, .. } => formats,
             SceneConfig::File { formats, .. } => formats,
+            SceneConfig::Markdown { formats, .. } => formats,
         }
     }
 
@@ -249,6 +299,7 @@ impl SceneConfig {
             SceneConfig::Screen { .. } => "screen",
             SceneConfig::Terminal { .. } => "terminal",
             SceneConfig::File { .. } => "file",
+            SceneConfig::Markdown { .. } => "markdown",
         }
     }
 
@@ -258,6 +309,7 @@ impl SceneConfig {
             SceneConfig::Screen { interactions, .. } => interactions,
             SceneConfig::Terminal { interactions, .. } => interactions,
             SceneConfig::File { .. } => &[],
+            SceneConfig::Markdown { interactions, .. } => interactions,
         }
     }
 }
