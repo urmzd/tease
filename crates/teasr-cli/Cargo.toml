@@ -12,7 +12,7 @@ name = "teasr"
 path = "src/main.rs"
 
 [dependencies]
-teasr-core = { path = "../teasr-core", version = "0.13.0" }
+teasr-core = { path = "../teasr-core" }
 clap = { version = "4", features = ["derive"] }
 tokio.workspace = true
 anyhow.workspace = true
