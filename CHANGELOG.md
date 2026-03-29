@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.14.0 (2026-03-29)
+
+### Features
+
+- **config**: add markdown scene to teasr configuration ([67f7c4c](https://github.com/urmzd/teasr/commit/67f7c4c42a16dc12b815314ede58c6e9601c767f))
+
+### Documentation
+
+- **readme**: add markdown capture showcase section ([daec81e](https://github.com/urmzd/teasr/commit/daec81ec11ce263f62f57984485fb2321ebc95fa))
+- **showcase**: refresh showcase assets and add markdown demo ([1b97f97](https://github.com/urmzd/teasr/commit/1b97f97ae4788e01e5675a6b8579c37e55bbaa61))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.13.0...v0.14.0)
+
+
 ## 0.13.0 (2026-03-29)
 
 ### Features
