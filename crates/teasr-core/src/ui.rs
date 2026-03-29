@@ -19,7 +19,7 @@ pub fn spinner(message: &str) -> ProgressBar {
     pb.set_style(
         ProgressStyle::default_spinner()
             .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-            .template("  {spinner:.cyan} {msg}")
+            .template("  {spinner:.cyan} {msg} {elapsed:.dim}")
             .unwrap(),
     );
     pb.set_message(message.to_string());

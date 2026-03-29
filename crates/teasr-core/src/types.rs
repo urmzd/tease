@@ -402,6 +402,7 @@ impl TeaseConfig {
 }
 
 /// A single captured frame with PNG data and its display duration.
+#[derive(Clone)]
 pub struct CapturedFrame {
     pub png_data: Vec<u8>,
     pub duration_ms: u64,

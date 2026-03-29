@@ -196,6 +196,7 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
             config.frame_duration_ms,
             config.scene_timeout,
             &config.font,
+            &pb,
         )
         .await
         {
@@ -233,6 +234,7 @@ async fn capture_scene(
     global_frame_duration_ms: u64,
     seconds: f64,
     global_font: &FontConfig,
+    pb: &indicatif::ProgressBar,
 ) -> Result<CaptureResult> {
     let scene_name = scene.name().to_string();
     let formats = scene
@@ -241,6 +243,7 @@ async fn capture_scene(
         .unwrap_or(&output_config.formats);
 
     let (mut backend, _tmp_file) = build_backend(scene, global_viewport, server, global_frame_duration_ms, global_font)?;
+    pb.set_message(format!("{scene_name}: setting up"));
     backend.setup().await?;
 
     let capture_fut = async {
@@ -256,6 +259,7 @@ async fn capture_scene(
             ..
         } = scene
         {
+            pb.set_message(format!("{scene_name}: rendering intro"));
             let splash_frames = render_splash(
                 splash,
                 cols.unwrap_or(80),
@@ -271,7 +275,14 @@ async fn capture_scene(
             frames.push(backend.snapshot().await?);
         }
 
-        for step in scene.interactions() {
+        let interactions = scene.interactions();
+        for (j, step) in interactions.iter().enumerate() {
+            let step_label = interaction_label(&step.interaction);
+            pb.set_message(format!(
+                "{scene_name}: step {}/{} {step_label}",
+                j + 1,
+                interactions.len()
+            ));
             let step_frames = backend.execute(&step.interaction).await?;
             if !step.hidden {
                 frames.extend(step_frames);
@@ -293,6 +304,7 @@ async fn capture_scene(
             ..
         } = scene
         {
+            pb.set_message(format!("{scene_name}: rendering outro"));
             let splash_frames = render_splash(
                 splash,
                 cols.unwrap_or(80),
@@ -316,9 +328,36 @@ async fn capture_scene(
 
     debug!("captured {} frames", frames.len());
 
+    pb.set_message(format!("{scene_name}: encoding outputs"));
     let files = write_outputs(&frames, &scene_name, formats, output_dir)?;
 
     Ok(CaptureResult { scene_name, files })
+}
+
+/// Human-readable label for an interaction step.
+fn interaction_label(interaction: &crate::types::Interaction) -> String {
+    use crate::types::Interaction;
+    match interaction {
+        Interaction::Type { text, .. } => {
+            let preview: String = text.chars().take(30).collect();
+            let suffix = if text.len() > 30 { "…" } else { "" };
+            format!("typing \"{preview}{suffix}\"")
+        }
+        Interaction::Key { key } => format!("pressing {key}"),
+        Interaction::Wait { duration, .. } => format!("waiting {duration}ms"),
+        Interaction::Click { selector, .. } => {
+            format!("clicking {}", selector.as_deref().unwrap_or("page"))
+        }
+        Interaction::Hover { selector, .. } => {
+            format!("hovering {}", selector.as_deref().unwrap_or("page"))
+        }
+        Interaction::ScrollTo { selector, .. } => {
+            format!("scrolling to {}", selector.as_deref().unwrap_or("top"))
+        }
+        Interaction::Snapshot { name, .. } => {
+            format!("snapshot{}", name.as_ref().map(|n| format!(" ({n})")).unwrap_or_default())
+        }
+    }
 }
 
 /// Render splash frames from a SplashConfig.
