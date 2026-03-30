@@ -8,9 +8,10 @@ branding:
 
 inputs:
   version:
-    description: "teasr version to install (e.g. '0.11.0'). Defaults to latest release."
+    description: "Deprecated: version is now derived from the action ref (e.g. @v0.11.0). This input is ignored."
     required: false
-    default: "latest"
+    default: ""
+    deprecationMessage: "Version is now derived from the action ref. Use uses: urmzd/teasr@<tag> instead."
   config:
     description: "Path to teasr.toml (default: auto-discover)"
     required: false
@@ -50,23 +51,12 @@ runs:
     - name: Download teasr
       shell: bash
       env:
-        INPUT_VERSION: ${{ inputs.version }}
+        TEASR_REPO: ${{ github.action_repository }}
+        TEASR_REF: ${{ github.action_ref }}
         TARGET: ${{ steps.platform.outputs.target }}
         EXT: ${{ steps.platform.outputs.ext }}
       run: |
-        REPO="urmzd/teasr"
-
-        if [ "$INPUT_VERSION" = "latest" ]; then
-          DOWNLOAD_URL=$(
-            curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
-              | grep -o "https://github.com/$REPO/releases/download/[^\"]*${TARGET}.${EXT}" \
-              | head -1
-          )
-        else
-          TAG="v${INPUT_VERSION#v}"
-          DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/teasr-${TARGET}.${EXT}"
-        fi
-
+        DOWNLOAD_URL="https://github.com/${TEASR_REPO}/releases/download/${TEASR_REF}/teasr-${TARGET}.${EXT}"
         echo "Downloading $DOWNLOAD_URL"
         curl -fsSL -o "teasr-archive.${EXT}" "$DOWNLOAD_URL"
 
