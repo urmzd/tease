@@ -37,16 +37,15 @@ runs:
       shell: bash
       run: |
         case "$RUNNER_OS-$RUNNER_ARCH" in
-          Linux-X64)    target="x86_64-unknown-linux-gnu"   ; ext="tar.gz" ;;
-          Linux-ARM64)  target="aarch64-unknown-linux-gnu"  ; ext="tar.gz" ;;
-          macOS-X64)    target="x86_64-apple-darwin"         ; ext="tar.gz" ;;
-          macOS-ARM64)  target="aarch64-apple-darwin"        ; ext="tar.gz" ;;
-          Windows-X64)  target="x86_64-pc-windows-msvc"     ; ext="zip"    ;;
-          Windows-ARM64) target="aarch64-pc-windows-msvc"   ; ext="zip"    ;;
+          Linux-X64)    target="x86_64-unknown-linux-gnu"   ;;
+          Linux-ARM64)  target="aarch64-unknown-linux-gnu"  ;;
+          macOS-X64)    target="x86_64-apple-darwin"         ;;
+          macOS-ARM64)  target="aarch64-apple-darwin"        ;;
+          Windows-X64)  target="x86_64-pc-windows-msvc"     ;;
+          Windows-ARM64) target="aarch64-pc-windows-msvc"   ;;
           *)            echo "::error::Unsupported platform: $RUNNER_OS-$RUNNER_ARCH" ; exit 1 ;;
         esac
         echo "target=$target" >> "$GITHUB_OUTPUT"
-        echo "ext=$ext"       >> "$GITHUB_OUTPUT"
 
     - name: Download teasr
       shell: bash
@@ -54,22 +53,17 @@ runs:
         TEASR_REPO: ${{ github.action_repository }}
         TEASR_REF: ${{ github.action_ref }}
         TARGET: ${{ steps.platform.outputs.target }}
-        EXT: ${{ steps.platform.outputs.ext }}
       run: |
-        DOWNLOAD_URL="https://github.com/${TEASR_REPO}/releases/download/${TEASR_REF}/teasr-${TARGET}.${EXT}"
-        echo "Downloading $DOWNLOAD_URL"
-        curl -fsSL -o "teasr-archive.${EXT}" "$DOWNLOAD_URL"
-
-        if [ "$EXT" = "tar.gz" ]; then
-          tar xzf "teasr-archive.${EXT}"
-          chmod +x teasr
-          sudo mv teasr /usr/local/bin/
-        else
-          7z x "teasr-archive.${EXT}" -oextracted
-          mv extracted/teasr.exe /usr/local/bin/
-          rm -rf extracted
+        BINARY_NAME="teasr-${TARGET}"
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
         fi
-        rm -f "teasr-archive.${EXT}"
+
+        BASE_URL="https://github.com/${TEASR_REPO}/releases/download/${TEASR_REF}"
+        curl -fsSL "${BASE_URL}/${BINARY_NAME}" -o /usr/local/bin/teasr
+        curl -fsSL "${BASE_URL}/${BINARY_NAME}.sha256" -o /tmp/teasr.sha256
+        (cd /usr/local/bin && sed "s/${BINARY_NAME}/teasr/" /tmp/teasr.sha256 | sha256sum -c -)
+        chmod +x /usr/local/bin/teasr
 
         teasr --version
 
