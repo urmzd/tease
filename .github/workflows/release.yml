@@ -30,67 +30,8 @@ jobs:
     needs: embed-src
     uses: ./.github/workflows/ci.yml
 
-  release:
-    needs: [ci, embed-src]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      released: ${{ steps.sr.outputs.released }}
-      version: ${{ steps.sr.outputs.version }}
-      tag: ${{ steps.sr.outputs.tag }}
-    steps:
-      - name: Generate app token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.SR_RELEASER_APP_ID }}
-          private-key: ${{ secrets.SR_RELEASER_PRIVATE_KEY }}
-          repositories: ${{ github.event.repository.name }}
-
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
-
-      - uses: urmzd/sr@v2
-        id: sr
-        with:
-          command: release
-          force: ${{ inputs.force || false }}
-          github-token: ${{ steps.app-token.outputs.token }}
-
-  publish:
-    needs: release
-    if: needs.release.outputs.released == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Authenticate with crates.io
-        id: auth
-        uses: rust-lang/crates-io-auth-action@v1
-
-      - name: Publish to crates.io
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        run: |
-          cargo publish -p teasr-term-render --allow-dirty
-          sleep 30
-          cargo publish -p teasr-core --allow-dirty
-          sleep 30
-          cargo publish -p teasr --allow-dirty
-
   build:
-    needs: release
-    if: needs.release.outputs.released == 'true'
+    needs: ci
     strategy:
       matrix:
         include:
@@ -114,12 +55,8 @@ jobs:
             cross: false
     name: Build (${{ matrix.target }})
     runs-on: ${{ matrix.runner }}
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.release.outputs.tag }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -148,17 +85,91 @@ jobs:
           fi
         shell: bash
 
-      - name: Upload to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare artifact
         run: |
-          TAG="${{ needs.release.outputs.tag }}"
           if [ -f "target/${{ matrix.target }}/release/teasr.exe" ]; then
             cp "target/${{ matrix.target }}/release/teasr.exe" "teasr-${{ matrix.target }}.exe"
-            gh release upload "$TAG" "teasr-${{ matrix.target }}.exe" --clobber
           else
             cp "target/${{ matrix.target }}/release/teasr" "teasr-${{ matrix.target }}"
             chmod +x "teasr-${{ matrix.target }}"
-            gh release upload "$TAG" "teasr-${{ matrix.target }}" --clobber
           fi
         shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teasr-${{ matrix.target }}
+          path: teasr-${{ matrix.target }}*
+
+  release:
+    needs: [ci, build, embed-src]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      released: ${{ steps.sr.outputs.released }}
+      version: ${{ steps.sr.outputs.version }}
+      tag: ${{ steps.sr.outputs.tag }}
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.SR_RELEASER_APP_ID }}
+          private-key: ${{ secrets.SR_RELEASER_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          for dir in artifacts/teasr-*/; do
+            cp "$dir"/* release-assets/
+          done
+          chmod +x release-assets/teasr-*[!e]
+          ls -la release-assets/
+
+      - uses: urmzd/sr@v2
+        id: sr
+        with:
+          command: release
+          force: ${{ inputs.force || false }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          artifacts: "release-assets/*"
+
+  publish:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: |
+          cargo publish -p teasr-term-render --allow-dirty
+          sleep 30
+          cargo publish -p teasr-core --allow-dirty
+          sleep 30
+          cargo publish -p teasr --allow-dirty
