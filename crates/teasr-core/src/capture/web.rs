@@ -1,13 +1,10 @@
 use anyhow::{Context, Result};
-use chromiumoxide::browser::{Browser, BrowserConfig};
-use chromiumoxide::cdp::browser_protocol::input::{
-    DispatchMouseEventParams, DispatchMouseEventType,
-};
-use chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotFormat;
-use futures::StreamExt;
 use std::time::Duration;
-use tokio::task::JoinHandle;
+
 use crate::backend::CaptureBackend;
+use crate::browser::{self, BrowserEngine, BrowserPage, LaunchOptions};
+use crate::capture::chrome::{install_idle_tracker, page_has_activity};
+use crate::capture::wait_for_idle;
 use crate::types::{CapturedFrame, Interaction, ViewportConfig};
 
 pub struct WebBackend {
@@ -15,9 +12,8 @@ pub struct WebBackend {
     viewport: ViewportConfig,
     frame_duration: u64,
     full_page: bool,
-    browser: Option<Browser>,
-    page: Option<chromiumoxide::Page>,
-    handler: Option<JoinHandle<()>>,
+    browser: Option<Box<dyn BrowserEngine>>,
+    page: Option<Box<dyn BrowserPage>>,
 }
 
 impl WebBackend {
@@ -29,20 +25,7 @@ impl WebBackend {
             full_page,
             browser: None,
             page: None,
-            handler: None,
         }
-    }
-
-    async fn take_screenshot(&self) -> Result<Vec<u8>> {
-        let page = self.page.as_ref().unwrap();
-        page.screenshot(
-            chromiumoxide::page::ScreenshotParams::builder()
-                .format(CaptureScreenshotFormat::Png)
-                .full_page(self.full_page)
-                .build(),
-        )
-        .await
-        .context("failed to take screenshot")
     }
 }
 
@@ -53,31 +36,16 @@ impl CaptureBackend for WebBackend {
     }
 
     async fn setup(&mut self) -> Result<()> {
-        let config = BrowserConfig::builder()
-            .window_size(self.viewport.width, self.viewport.height)
-            .no_sandbox()
-            .build()
-            .map_err(|e| anyhow::anyhow!("browser config error: {e}"))?;
+        let opts = LaunchOptions::new(self.viewport.width, self.viewport.height);
+        let browser = browser::launch(opts).await?;
+        let page = browser.new_page("about:blank").await?;
 
-        let (browser, mut handler) = Browser::launch(config)
-            .await
-            .context("failed to launch browser")?;
-
-        let handle = tokio::spawn(async move {
-            while let Some(_event) = handler.next().await {}
-        });
-
-        let page = browser
-            .new_page("about:blank")
-            .await
-            .context("failed to create page")?;
-
-        page.goto(&self.url).await.context("navigation failed")?;
-        tokio::time::sleep(Duration::from_millis(1000)).await;
+        page.goto(&self.url).await?;
+        install_idle_tracker(&*page).await;
+        wait_for_idle(5000, 500, 50, || page_has_activity(&*page)).await;
 
         self.browser = Some(browser);
         self.page = Some(page);
-        self.handler = Some(handle);
 
         Ok(())
     }
@@ -88,12 +56,7 @@ impl CaptureBackend for WebBackend {
         match interaction {
             Interaction::Click { selector } => {
                 if let Some(sel) = selector {
-                    page.find_element(sel)
-                        .await
-                        .context("element not found")?
-                        .click()
-                        .await
-                        .context("click failed")?;
+                    page.find_and_click(sel).await?;
                 }
                 Ok(vec![])
             }
@@ -103,22 +66,10 @@ impl CaptureBackend for WebBackend {
                         "(() => {{ const r = document.querySelector('{}').getBoundingClientRect(); return [r.x + r.width/2, r.y + r.height/2]; }})()",
                         sel.replace('\'', "\\'")
                     );
-                    let coords: Vec<f64> = page
-                        .evaluate(js)
+                    let coords: Vec<f64> = browser::evaluate(&**page, &js)
                         .await
-                        .context("failed to get element position")?
-                        .into_value()
-                        .context("failed to parse coordinates")?;
-                    page.execute(
-                        DispatchMouseEventParams::builder()
-                            .r#type(DispatchMouseEventType::MouseMoved)
-                            .x(coords[0])
-                            .y(coords[1])
-                            .build()
-                            .unwrap(),
-                    )
-                    .await
-                    .context("hover dispatch failed")?;
+                        .context("failed to get element position")?;
+                    page.mouse_move(coords[0], coords[1]).await?;
                     tokio::time::sleep(Duration::from_millis(100)).await;
                 }
                 Ok(vec![])
@@ -129,16 +80,17 @@ impl CaptureBackend for WebBackend {
                         "document.querySelector('{}').scrollIntoView({{behavior:'smooth'}})",
                         sel.replace('\'', "\\'")
                     );
-                    page.evaluate(js).await.context("scroll failed")?;
+                    page.execute(&js).await;
                 }
                 Ok(vec![])
             }
-            Interaction::Wait { duration, .. } => {
-                tokio::time::sleep(Duration::from_millis(*duration)).await;
+            Interaction::Wait { duration, idle_timeout } => {
+                install_idle_tracker(&**page).await;
+                wait_for_idle(*duration, *idle_timeout, 50, || page_has_activity(&**page)).await;
                 Ok(vec![])
             }
             Interaction::Snapshot { .. } => {
-                let png_data = self.take_screenshot().await?;
+                let png_data = page.screenshot(self.full_page).await?;
                 Ok(vec![CapturedFrame {
                     png_data,
                     duration_ms: self.frame_duration,
@@ -147,30 +99,27 @@ impl CaptureBackend for WebBackend {
             Interaction::Type { text, speed } => {
                 let delay = speed.unwrap_or(50);
                 for ch in text.chars() {
-                    page.evaluate(format!(
+                    page.execute(&format!(
                         "document.activeElement && document.activeElement.dispatchEvent(new KeyboardEvent('keypress', {{key: '{}'}}))",
                         ch
-                    ))
-                    .await
-                    .ok();
+                    )).await;
                     tokio::time::sleep(Duration::from_millis(delay)).await;
                 }
                 Ok(vec![])
             }
             Interaction::Key { key } => {
-                page.evaluate(format!(
+                page.execute(&format!(
                     "document.activeElement && document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {{key: '{}'}}))",
                     key
-                ))
-                .await
-                .ok();
+                )).await;
                 Ok(vec![])
             }
         }
     }
 
     async fn snapshot(&mut self) -> Result<CapturedFrame> {
-        let png_data = self.take_screenshot().await?;
+        let page = self.page.as_ref().unwrap();
+        let png_data = page.screenshot(self.full_page).await?;
         Ok(CapturedFrame {
             png_data,
             duration_ms: self.frame_duration,
@@ -178,11 +127,9 @@ impl CaptureBackend for WebBackend {
     }
 
     async fn teardown(&mut self) -> Result<()> {
+        self.page = None;
         if let Some(mut browser) = self.browser.take() {
-            browser.close().await.ok();
-        }
-        if let Some(handle) = self.handler.take() {
-            handle.await.ok();
+            browser.close().await;
         }
         Ok(())
     }
