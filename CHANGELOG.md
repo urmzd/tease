@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.14.2 (2026-03-30)
+
+### Performance
+
+- add capture benchmark and smart wait defaults ([4baa8f9](https://github.com/urmzd/teasr/commit/4baa8f93f44f37a24edc69a3964a4dd29fe5c8de))
+- optimize terminal capture pipeline ([1c1d7a1](https://github.com/urmzd/teasr/commit/1c1d7a1fd8c7e3271f20fa1bda8549dc8c341148))
+
+### Documentation
+
+- add crates.io badge to README ([333088e](https://github.com/urmzd/teasr/commit/333088e834e3b6797ac6bc1fadd7b10f61942223))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.14.1...v0.14.2)
+
+
 ## 0.14.1 (2026-03-29)
 
 ### Bug Fixes
