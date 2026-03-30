@@ -3341,7 +3341,7 @@ checksum = "df7f62577c25e07834649fc3b39fafdc597c0a3527dc1c60129201ccfcbaa50c"
 
 [[package]]
 name = "teasr"
-version = "0.14.1"
+version = "0.14.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -3353,7 +3353,7 @@ dependencies = [
 
 [[package]]
 name = "teasr-core"
-version = "0.14.1"
+version = "0.14.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3372,6 +3372,7 @@ dependencies = [
  "reqwest 0.12.28",
  "rgb",
  "serde",
+ "serde_json",
  "teasr-term-render",
  "tempfile",
  "tokio",
@@ -3383,7 +3384,7 @@ dependencies = [
 
 [[package]]
 name = "teasr-term-render"
-version = "0.14.1"
+version = "0.14.2"
 dependencies = [
  "anstyle-parse 0.2.7",
  "anyhow",

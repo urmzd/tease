@@ -1,8 +1,10 @@
 use anyhow::{Context, Result};
 use std::io::Cursor;
+use std::time::{Duration, Instant};
 use tracing::{debug, info, warn};
 
 use crate::backend::CaptureBackend;
+use crate::capture::wait_for_idle;
 use crate::types::{CapturedFrame, Interaction, Region};
 
 pub struct ScreenBackend {
@@ -106,14 +108,36 @@ impl CaptureBackend for ScreenBackend {
                 .status()
                 .context("setup command failed")?;
         }
-        if let Some(ms) = self.delay {
-            tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
-        }
-        // Record the PID of the matched window so we can close it on teardown
+
+        // If we have a window query, poll for it to appear instead of fixed delay
         if let Some(ref query) = self.window {
-            if let Some(pid) = find_window_pid(query) {
-                debug!("tracked window PID {} for teardown", pid);
-                self.captured_pid = Some(pid);
+            let timeout_ms = self.delay.unwrap_or(10000);
+            let deadline = Instant::now() + Duration::from_millis(timeout_ms);
+            loop {
+                if let Some(pid) = find_window_pid(query) {
+                    debug!("window appeared (PID {}), settling", pid);
+                    self.captured_pid = Some(pid);
+                    // Brief settle time for the window to finish rendering
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    break;
+                }
+                if Instant::now() >= deadline {
+                    warn!("timed out waiting for window '{query}'");
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            }
+        } else if let Some(ms) = self.delay {
+            tokio::time::sleep(Duration::from_millis(ms)).await;
+        }
+
+        // Track PID if not already set during polling
+        if self.captured_pid.is_none() {
+            if let Some(ref query) = self.window {
+                if let Some(pid) = find_window_pid(query) {
+                    debug!("tracked window PID {} for teardown", pid);
+                    self.captured_pid = Some(pid);
+                }
             }
         }
         Ok(())
@@ -128,8 +152,22 @@ impl CaptureBackend for ScreenBackend {
                     duration_ms: self.frame_duration,
                 }])
             }
-            Interaction::Wait { duration, .. } => {
-                tokio::time::sleep(std::time::Duration::from_millis(*duration)).await;
+            Interaction::Wait { duration, idle_timeout } => {
+                let poll_ms = self.frame_duration.max(100);
+                let mut last_pixels: Option<Vec<u8>> = None;
+                wait_for_idle(*duration, *idle_timeout, poll_ms, || {
+                    let pixels = self.capture_image().ok().map(|img| img.into_raw());
+                    let changed = match (&last_pixels, &pixels) {
+                        (Some(last), Some(curr)) => last != curr,
+                        (None, Some(_)) => true,
+                        _ => false,
+                    };
+                    if changed {
+                        last_pixels = pixels;
+                    }
+                    Box::pin(async move { changed })
+                })
+                .await;
                 Ok(vec![])
             }
             other => {
