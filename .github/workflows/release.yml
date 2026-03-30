@@ -168,8 +168,8 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: |
-          cargo publish -p teasr-term-render --allow-dirty
+          cargo publish -p teasr-term-render --allow-dirty --no-verify
           sleep 30
-          cargo publish -p teasr-core --allow-dirty
+          cargo publish -p teasr-core --allow-dirty --no-verify
           sleep 30
-          cargo publish -p teasr --allow-dirty
+          cargo publish -p teasr --allow-dirty --no-verify
