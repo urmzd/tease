@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.15.0 (2026-03-30)
+
+### Features
+
+- **capture**: add DOM-based activity tracking helpers ([6a8c478](https://github.com/urmzd/teasr/commit/6a8c478aa94560e807dee67713adba63b2dee02c))
+- **capture**: add generic idle detection loop ([b83eada](https://github.com/urmzd/teasr/commit/b83eada390bc7794e845e88c597e7ad669001655))
+- **browser**: introduce browser engine abstraction layer ([b6cf0f1](https://github.com/urmzd/teasr/commit/b6cf0f14a7d986824ed285d323b6287109cac424))
+- **deps**: add serde_json dependency ([142d5cc](https://github.com/urmzd/teasr/commit/142d5cc0b414404ed002141e2f544fb9a5224048))
+
+### Bug Fixes
+
+- use action ref for binary download, deprecate version input ([2d2c8b5](https://github.com/urmzd/teasr/commit/2d2c8b5308e32acb83f793561f978a2d8243949f))
+- **ci**: build before release to sync floating tag assets ([4dad59c](https://github.com/urmzd/teasr/commit/4dad59cc886de10730eae270fe028be4a0260e2f))
+- use workspace version inheritance for all crates ([6590a00](https://github.com/urmzd/teasr/commit/6590a00e58a077365a61e9238a529e70b4e6564e))
+
+### Documentation
+
+- update sr action reference from v2 to v3 ([6c757eb](https://github.com/urmzd/teasr/commit/6c757ebc6067998995c9eba55152cf56de24ab48))
+
+### Refactoring
+
+- **chrome-frame**: migrate to browser abstraction ([ba3df66](https://github.com/urmzd/teasr/commit/ba3df669cf70e728e04905664ee6d61dc989c2c6))
+- **screen-backend**: implement pixel-based idle detection ([b1cc62f](https://github.com/urmzd/teasr/commit/b1cc62f9f9fe8a674712f3fba70628daae5b393d))
+- **web-backend**: migrate to browser abstraction ([7c2dc03](https://github.com/urmzd/teasr/commit/7c2dc032f31cc9d39b5cc708662b1f0a11ce9733))
+- **file-backend**: migrate to browser abstraction ([c9d76a9](https://github.com/urmzd/teasr/commit/c9d76a9ae14e02c976d0419efbe0e52b6d20f577))
+
+### Miscellaneous
+
+- update sr action from v2 to v3 ([1e1323c](https://github.com/urmzd/teasr/commit/1e1323cf5165b5bc609fe0051c00a6af06481961))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.14.2...v0.15.0)
+
+
 ## 0.14.2 (2026-03-30)
 
 ### Performance
