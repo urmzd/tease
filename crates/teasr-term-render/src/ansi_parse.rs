@@ -3,7 +3,7 @@ use anstyle_parse::{Params, Parser, Perform, Utf8Parser as CharAcc};
 
 use crate::themes::Theme;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Cell {
     pub ch: char,
     pub fg: CellColor,
@@ -86,7 +86,7 @@ impl Cell {
 }
 
 /// A grid of cells representing terminal output.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CellGrid {
     pub cols: usize,
     pub rows: Vec<Vec<Cell>>,

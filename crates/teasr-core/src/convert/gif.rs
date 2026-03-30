@@ -9,8 +9,23 @@ pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path, config: &GifConf
         anyhow::bail!("no frames to encode");
     }
 
+    // Merge consecutive frames with identical PNG data to reduce encoding work
+    let merged: Vec<CapturedFrame> = {
+        let mut out: Vec<CapturedFrame> = Vec::new();
+        for frame in frames {
+            if let Some(last) = out.last_mut() {
+                if last.png_data == frame.png_data {
+                    last.duration_ms += frame.duration_ms;
+                    continue;
+                }
+            }
+            out.push(frame.clone());
+        }
+        out
+    };
+
     // Decode all frames and find max dimensions so every frame fits
-    let decoded: Vec<image::RgbaImage> = frames
+    let decoded: Vec<image::RgbaImage> = merged
         .iter()
         .enumerate()
         .map(|(i, f)| {
@@ -50,7 +65,7 @@ pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path, config: &GifConf
     });
 
     let mut timestamp = 0.0_f64;
-    for (i, (rgba, frame)) in decoded.iter().zip(frames.iter()).enumerate() {
+    for (i, (rgba, frame)) in decoded.iter().zip(merged.iter()).enumerate() {
         // Pad smaller frames onto a max-size canvas (top-left aligned)
         let canvas = if rgba.dimensions() != (max_width, max_height) {
             let mut canvas = image::RgbaImage::new(max_width, max_height);

@@ -13,6 +13,7 @@
 
 <p align="center">
   <a href="https://github.com/urmzd/teasr/actions/workflows/ci.yml"><img src="https://github.com/urmzd/teasr/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://crates.io/crates/teasr"><img src="https://img.shields.io/crates/v/teasr" alt="crates.io"></a>
 </p>
 
 ## Showcase

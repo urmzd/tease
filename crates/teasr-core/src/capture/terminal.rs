@@ -3,7 +3,7 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tracing::debug;
 
 use crate::backend::CaptureBackend;
@@ -23,6 +23,8 @@ pub struct TerminalBackend {
     emulator: Option<teasr_term_render::TerminalEmulator>,
     reader_handle: Option<JoinHandle<()>>,
     child: Option<Box<dyn portable_pty::Child + Send>>,
+    last_grid: Option<teasr_term_render::CellGrid>,
+    last_png: Option<Vec<u8>>,
 }
 
 impl TerminalBackend {
@@ -51,6 +53,8 @@ impl TerminalBackend {
             emulator: None,
             reader_handle: None,
             child: None,
+            last_grid: None,
+            last_png: None,
         }
     }
 
@@ -67,13 +71,24 @@ impl TerminalBackend {
             emulator.feed(&data);
         }
         let grid = emulator.snapshot();
+
+        // Skip re-rendering if the grid hasn't changed
+        if let Some(ref last) = self.last_grid {
+            if *last == grid {
+                return Ok(self.last_png.clone().unwrap());
+            }
+        }
+
         let opts = teasr_term_render::RenderOptions {
             theme_name: &self.theme,
             title: self.title.as_deref(),
             font_family: self.font_family.as_deref(),
             font_size: self.font_size,
         };
-        teasr_term_render::render_grid_to_png(&grid, &opts)
+        let png = teasr_term_render::render_grid_to_png(&grid, &opts)?;
+        self.last_grid = Some(grid);
+        self.last_png = Some(png.clone());
+        Ok(png)
     }
 }
 
@@ -159,8 +174,8 @@ impl CaptureBackend for TerminalBackend {
         self.reader_handle = Some(reader_handle);
         self.child = Some(child);
 
-        // Wait for shell prompt
-        thread::sleep(Duration::from_millis(200));
+        // Poll for shell prompt instead of sleeping a fixed duration
+        wait_for_buffer_match(self.buffer.as_ref().unwrap(), b"$ ", Duration::from_millis(2000));
 
         // Resolve the target working directory
         let abs_cwd = {
@@ -175,24 +190,9 @@ impl CaptureBackend for TerminalBackend {
             }
         };
 
-        // Copy the cwd to a temp dir so the demo can't break the real files
-        let effective_cwd = {
-            let copy_dir = tempfile::tempdir().context("failed to create copy dir")?;
-            let copy_path = copy_dir.path().join("repo");
-            let status = std::process::Command::new("cp")
-                .args(["-a"])
-                .arg(&abs_cwd)
-                .arg(&copy_path)
-                .status()
-                .context("failed to copy working directory")?;
-            if !status.success() {
-                anyhow::bail!("cp -a failed (exit {})", status);
-            }
-            debug!("copied {} -> {}", abs_cwd.display(), copy_path.display());
-            // Leak the tempdir so it lives until process exit
-            std::mem::forget(copy_dir);
-            copy_path
-        };
+        // Use the working directory directly — the user controls the interactions,
+        // so there's no risk of unintended modifications.
+        let effective_cwd = abs_cwd;
 
         // cd into the effective cwd and clear the screen
         {
@@ -207,7 +207,8 @@ impl CaptureBackend for TerminalBackend {
                     .as_bytes(),
                 )
                 .context("failed to cd into cwd")?;
-            thread::sleep(Duration::from_millis(500));
+            // Poll for prompt after cd/clear instead of sleeping a fixed duration
+            wait_for_buffer_match(self.buffer.as_ref().unwrap(), b"$ ", Duration::from_millis(2000));
             // Drain the buffer so the cd/clone doesn't appear in output
             if let Some(ref buffer) = self.buffer {
                 buffer.lock().unwrap().clear();
@@ -268,7 +269,7 @@ impl CaptureBackend for TerminalBackend {
                 let step_ms = *duration / steps;
                 let mut frames = Vec::new();
                 let mut idle_ms: u64 = 0;
-                let idle_limit = idle_timeout.unwrap_or(u64::MAX);
+                let idle_limit = if *idle_timeout == 0 { u64::MAX } else { *idle_timeout };
 
                 for _ in 0..steps {
                     thread::sleep(Duration::from_millis(step_ms));
@@ -357,5 +358,22 @@ fn key_to_bytes(key: &str) -> Vec<u8> {
         "left" => vec![0x1b, b'[', b'D'],
         "space" => vec![b' '],
         _ => key.as_bytes().to_vec(),
+    }
+}
+
+/// Poll a shared buffer for a byte pattern, returning once found or on timeout.
+fn wait_for_buffer_match(buffer: &Arc<Mutex<Vec<u8>>>, pattern: &[u8], timeout: Duration) {
+    let deadline = Instant::now() + timeout;
+    loop {
+        thread::sleep(Duration::from_millis(10));
+        {
+            let lock = buffer.lock().unwrap();
+            if lock.windows(pattern.len()).any(|w| w == pattern) {
+                return;
+            }
+        }
+        if Instant::now() >= deadline {
+            return;
+        }
     }
 }
