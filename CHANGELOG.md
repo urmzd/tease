@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.2 (2026-03-30)
+
+### Bug Fixes
+
+- download bare binaries and verify sha256 checksum ([4778a6d](https://github.com/urmzd/teasr/commit/4778a6d2bc5dd4ba1638fa4deca31e2869430286))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.15.1...v0.15.2)
+
+
 ## 0.15.1 (2026-03-30)
 
 ### Bug Fixes
