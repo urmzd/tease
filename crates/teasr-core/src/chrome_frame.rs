@@ -1,11 +1,12 @@
 use anyhow::{Context, Result};
 use base64::Engine;
-use chromiumoxide::browser::{Browser, BrowserConfig};
-use chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotFormat;
-use futures::StreamExt;
 use tracing::debug;
 
-/// Render a PNG image inside macOS-style window chrome using headless Chrome.
+use crate::browser::{self, LaunchOptions};
+use crate::capture::chrome::{install_idle_tracker, page_has_activity};
+use crate::capture::wait_for_idle;
+
+/// Render a PNG image inside macOS-style window chrome using a headless browser.
 ///
 /// Visual constants match `teasr-term-render/src/svg.rs` and `themes.rs`:
 /// chrome height 40px, corner radius 10px, padding 16px, Dracula theme by default.
@@ -18,7 +19,6 @@ pub async fn render_with_chrome_frame(
     let img_w = img.width();
     let img_h = img.height();
 
-    // Scale down for Chrome rendering if the image is too large
     const MAX_WIDTH: u32 = 1280;
     let scale = if img_w > MAX_WIDTH {
         MAX_WIDTH as f64 / img_w as f64
@@ -37,9 +37,9 @@ pub async fn render_with_chrome_frame(
     let b64 = base64::engine::general_purpose::STANDARD.encode(png_data);
 
     let html = include_str!("chrome_frame.html")
-        .replace("__VP_W__", &(render_w + 32 + 80).to_string()) // content padding (16*2) + body padding (40*2)
-        .replace("__VP_H__", &(render_h + 40 + 32 + 80).to_string()) // chrome + content padding + body padding
-        .replace("__WIN_W__", &(render_w + 32).to_string()) // content padding
+        .replace("__VP_W__", &(render_w + 32 + 80).to_string())
+        .replace("__VP_H__", &(render_h + 40 + 32 + 80).to_string())
+        .replace("__WIN_W__", &(render_w + 32).to_string())
         .replace("__CHROME_BG__", chrome_bg)
         .replace("__BTN_CLOSE__", btn_close)
         .replace("__BTN_MIN__", btn_min)
@@ -60,40 +60,15 @@ pub async fn render_with_chrome_frame(
 
     debug!("chrome frame: viewport {}x{}", vp_w, vp_h);
 
-    let config = BrowserConfig::builder()
-        .window_size(vp_w, vp_h)
-        .no_sandbox()
-        .build()
-        .map_err(|e| anyhow::anyhow!("browser config error: {e}"))?;
+    let mut browser = browser::launch(LaunchOptions::new(vp_w, vp_h)).await?;
+    let page = browser.new_page(&file_url).await?;
 
-    let (browser, mut handler) = Browser::launch(config)
-        .await
-        .context("failed to launch browser for chrome framing")?;
+    install_idle_tracker(&*page).await;
+    wait_for_idle(5000, 500, 50, || page_has_activity(&*page)).await;
 
-    let handle = tokio::spawn(async move {
-        while let Some(_event) = handler.next().await {}
-    });
+    let screenshot = page.screenshot(true).await?;
 
-    let page = browser
-        .new_page(&file_url)
-        .await
-        .context("failed to create page for chrome framing")?;
-
-    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-
-    let screenshot = page
-        .screenshot(
-            chromiumoxide::page::ScreenshotParams::builder()
-                .format(CaptureScreenshotFormat::Png)
-                .full_page(true)
-                .build(),
-        )
-        .await
-        .context("failed to take chrome frame screenshot")?;
-
-    let mut browser = browser;
-    browser.close().await.ok();
-    handle.await.ok();
+    browser.close().await;
     std::fs::remove_file(&tmp).ok();
 
     Ok(screenshot)
