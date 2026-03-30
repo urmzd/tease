@@ -7,14 +7,14 @@ members = [
 ]
 
 [workspace.package]
-version = "0.15.0"
+version = "0.15.1"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/urmzd/teasr"
 
 [workspace.dependencies]
-teasr-term-render = { path = "crates/teasr-term-render", version = "0.15.0" }
-teasr-core = { path = "crates/teasr-core", version = "0.15.0" }
+teasr-term-render = { path = "crates/teasr-term-render", version = "0.15.1" }
+teasr-core = { path = "crates/teasr-core", version = "0.15.1" }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.9"

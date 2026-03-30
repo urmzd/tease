@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.1 (2026-03-30)
+
+### Bug Fixes
+
+- add --no-verify to cargo publish to skip redundant rebuild ([2bebabd](https://github.com/urmzd/teasr/commit/2bebabdfdae32acfc36522810427c0485251935f))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.15.0...v0.15.1)
+
+
 ## 0.15.0 (2026-03-30)
 
 ### Features
