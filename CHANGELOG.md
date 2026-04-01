@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.15.3 (2026-04-01)
+
+### Bug Fixes
+
+- **action**: handle floating tag resolution under pipefail ([844df6e](https://github.com/urmzd/teasr/commit/844df6ecc0fdb9a31a34f888716a051edb098fb2))
+- **action**: remove auth from release API calls for cross-repo compatibility ([f476386](https://github.com/urmzd/teasr/commit/f476386ed853e6eed031398fc5593788246244ad))
+
+### Refactoring
+
+- normalize action.yml with floating tag resolution and consistent metadata ([74788e0](https://github.com/urmzd/teasr/commit/74788e006bd01f2b7887f70622d5bfabd7c811da))
+
+### Miscellaneous
+
+- add diagnostic logging to action.yml ([d7755f0](https://github.com/urmzd/teasr/commit/d7755f0298b0e62181086154f1665f11efc78895))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.15.2...v0.15.3)
+
+
 ## 0.15.2 (2026-03-30)
 
 ### Bug Fixes
