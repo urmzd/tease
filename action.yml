@@ -33,28 +33,32 @@ runs:
         TEASR_REF: ${{ github.action_ref }}
       run: |
         set -euo pipefail
+        echo "::group::Download teasr binary"
 
         OS=$(uname -s | tr '[:upper:]' '[:lower:]')
         ARCH=$(uname -m)
+        echo "Detected OS=$OS ARCH=$ARCH"
         case "$ARCH" in
           x86_64)        ARCH="x86_64" ;;
           aarch64|arm64) ARCH="aarch64" ;;
-          *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
+          *) echo "::error::Unsupported architecture: $ARCH"; exit 1 ;;
         esac
         case "$OS" in
           linux)  TARGET="${ARCH}-unknown-linux-gnu" ;;
           darwin) TARGET="${ARCH}-apple-darwin" ;;
-          *) echo "Unsupported OS: $OS" >&2; exit 1 ;;
+          *) echo "::error::Unsupported OS: $OS"; exit 1 ;;
         esac
 
         BINARY_NAME="teasr-${TARGET}"
         DEST="$HOME/.local/bin/teasr"
         mkdir -p "$HOME/.local/bin"
+        echo "Target=$TARGET Binary=$BINARY_NAME"
 
         # Resolve the action ref to a concrete release tag.
         # Floating tags (e.g. v1) are git tags with no release attached; exact
         # version tags (e.g. v1.2.3) have a release with binary assets.
         API="https://api.github.com/repos/${TEASR_REPO}"
+        echo "Resolving ref=${TEASR_REF} via ${API}"
 
         RELEASE_TAG=$(curl -fsSL \
           -H "Authorization: token $GH_TOKEN" \
@@ -64,33 +68,40 @@ runs:
           | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
 
         if [ -z "$RELEASE_TAG" ]; then
+          echo "No exact release for ref=${TEASR_REF}, searching by major version..."
           RELEASES=$(curl -fsSL \
             -H "Authorization: token $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "${API}/releases?per_page=20")
           MAJOR=$(echo "$TEASR_REF" | grep -oE '^v[0-9]+')
           if [ -n "$MAJOR" ]; then
+            echo "Matching major version prefix: ${MAJOR}"
             RELEASE_TAG=$(echo "$RELEASES" | grep '"tag_name"' \
               | grep "\"${MAJOR}\." | head -1 \
               | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
           fi
           if [ -z "$RELEASE_TAG" ]; then
+            echo "Falling back to latest release"
             RELEASE_TAG=$(echo "$RELEASES" | grep '"tag_name"' | head -1 \
               | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
           fi
         fi
 
         if [ -z "$RELEASE_TAG" ]; then
-          echo "Could not resolve ref '${TEASR_REF}' to a release tag" >&2
+          echo "::error::Could not resolve ref '${TEASR_REF}' to a release tag"
           exit 1
         fi
 
+        echo "Resolved release tag: ${RELEASE_TAG}"
         URL="https://github.com/${TEASR_REPO}/releases/download/${RELEASE_TAG}/${BINARY_NAME}"
+        echo "Downloading from ${URL}"
         curl -fsSL -H "Authorization: token $GH_TOKEN" "$URL" -o "$DEST"
         chmod +x "$DEST"
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+        echo "teasr binary installed to ${DEST}"
         teasr --version
+        echo "::endgroup::"
 
     - name: Install Chrome
       if: inputs.install-chrome == 'true'
@@ -103,7 +114,9 @@ runs:
       shell: bash
       env:
         FONTS: ${{ inputs.install-fonts }}
-      run: teasr setup --fonts "$FONTS"
+      run: |
+        echo "Installing fonts: $FONTS"
+        teasr setup --fonts "$FONTS"
 
     - name: Run teasr
       shell: bash
@@ -112,6 +125,7 @@ runs:
         INPUT_SCENES: ${{ inputs.scenes }}
         INPUT_ARGS: ${{ inputs.args }}
       run: |
+        echo "::group::Run teasr"
         args=(showme)
 
         if [ -n "$INPUT_CONFIG" ]; then
@@ -127,4 +141,6 @@ runs:
           args+=($INPUT_ARGS)
         fi
 
+        echo "Executing: teasr ${args[*]}"
         teasr "${args[@]}"
+        echo "::endgroup::"
