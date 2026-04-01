@@ -7,63 +7,88 @@ branding:
   color: "purple"
 
 inputs:
-  version:
-    description: "Deprecated: version is now derived from the action ref (e.g. @v0.11.0). This input is ignored."
-    required: false
-    default: ""
-    deprecationMessage: "Version is now derived from the action ref. Use uses: urmzd/teasr@<tag> instead."
   config:
     description: "Path to teasr.toml (default: auto-discover)"
-    required: false
   scenes:
     description: "Comma-separated scene names to capture (default: all)"
-    required: false
   args:
     description: "Additional arguments passed to `teasr showme`"
-    required: false
   install-chrome:
     description: "Whether to install Chrome (set to 'false' if already available)"
-    required: false
     default: "true"
   install-fonts:
     description: "Space-separated font families to install via `teasr setup --fonts`"
-    required: false
+  github-token:
+    description: "GitHub token for downloading the binary"
+    default: ${{ github.token }}
 
 runs:
   using: "composite"
   steps:
-    - name: Determine platform
-      id: platform
-      shell: bash
-      run: |
-        case "$RUNNER_OS-$RUNNER_ARCH" in
-          Linux-X64)    target="x86_64-unknown-linux-gnu"   ;;
-          Linux-ARM64)  target="aarch64-unknown-linux-gnu"  ;;
-          macOS-X64)    target="x86_64-apple-darwin"         ;;
-          macOS-ARM64)  target="aarch64-apple-darwin"        ;;
-          Windows-X64)  target="x86_64-pc-windows-msvc"     ;;
-          Windows-ARM64) target="aarch64-pc-windows-msvc"   ;;
-          *)            echo "::error::Unsupported platform: $RUNNER_OS-$RUNNER_ARCH" ; exit 1 ;;
-        esac
-        echo "target=$target" >> "$GITHUB_OUTPUT"
-
-    - name: Download teasr
+    - name: Download teasr binary
       shell: bash
       env:
+        GH_TOKEN: ${{ inputs.github-token }}
         TEASR_REPO: ${{ github.action_repository }}
         TEASR_REF: ${{ github.action_ref }}
-        TARGET: ${{ steps.platform.outputs.target }}
       run: |
+        set -euo pipefail
+
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m)
+        case "$ARCH" in
+          x86_64)        ARCH="x86_64" ;;
+          aarch64|arm64) ARCH="aarch64" ;;
+          *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
+        esac
+        case "$OS" in
+          linux)  TARGET="${ARCH}-unknown-linux-gnu" ;;
+          darwin) TARGET="${ARCH}-apple-darwin" ;;
+          *) echo "Unsupported OS: $OS" >&2; exit 1 ;;
+        esac
+
         BINARY_NAME="teasr-${TARGET}"
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          BINARY_NAME="${BINARY_NAME}.exe"
+        DEST="$HOME/.local/bin/teasr"
+        mkdir -p "$HOME/.local/bin"
+
+        # Resolve the action ref to a concrete release tag.
+        # Floating tags (e.g. v1) are git tags with no release attached; exact
+        # version tags (e.g. v1.2.3) have a release with binary assets.
+        API="https://api.github.com/repos/${TEASR_REPO}"
+
+        RELEASE_TAG=$(curl -fsSL \
+          -H "Authorization: token $GH_TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          "${API}/releases/tags/${TEASR_REF}" 2>/dev/null \
+          | grep '"tag_name"' | head -1 \
+          | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+
+        if [ -z "$RELEASE_TAG" ]; then
+          RELEASES=$(curl -fsSL \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "${API}/releases?per_page=20")
+          MAJOR=$(echo "$TEASR_REF" | grep -oE '^v[0-9]+')
+          if [ -n "$MAJOR" ]; then
+            RELEASE_TAG=$(echo "$RELEASES" | grep '"tag_name"' \
+              | grep "\"${MAJOR}\." | head -1 \
+              | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+          fi
+          if [ -z "$RELEASE_TAG" ]; then
+            RELEASE_TAG=$(echo "$RELEASES" | grep '"tag_name"' | head -1 \
+              | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+          fi
         fi
 
-        BASE_URL="https://github.com/${TEASR_REPO}/releases/download/${TEASR_REF}"
-        curl -fsSL "${BASE_URL}/${BINARY_NAME}" -o /usr/local/bin/teasr
-        curl -fsSL "${BASE_URL}/${BINARY_NAME}.sha256" -o /tmp/teasr.sha256
-        (cd /usr/local/bin && sed "s/${BINARY_NAME}/teasr/" /tmp/teasr.sha256 | sha256sum -c -)
-        chmod +x /usr/local/bin/teasr
+        if [ -z "$RELEASE_TAG" ]; then
+          echo "Could not resolve ref '${TEASR_REF}' to a release tag" >&2
+          exit 1
+        fi
+
+        URL="https://github.com/${TEASR_REPO}/releases/download/${RELEASE_TAG}/${BINARY_NAME}"
+        curl -fsSL -H "Authorization: token $GH_TOKEN" "$URL" -o "$DEST"
+        chmod +x "$DEST"
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
         teasr --version
 
