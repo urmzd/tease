@@ -2,6 +2,16 @@
 set -euo pipefail
 
 REPO="urmzd/teasr"
+
+# curl with optional auth — uses GH_TOKEN or GITHUB_TOKEN if set.
+gh_curl() {
+    local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+    if [ -n "$token" ]; then
+        curl -fsSL -H "Authorization: token $token" "$@"
+    else
+        curl -fsSL "$@"
+    fi
+}
 BINARY="teasr"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 
@@ -35,7 +45,7 @@ detect_target() {
 
 # Get latest release tag
 get_latest_version() {
-  curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/'
+  gh_curl "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/'
 }
 
 main() {
@@ -51,7 +61,7 @@ main() {
   TMPDIR_CLEANUP="$(mktemp -d)"
   trap 'rm -rf "$TMPDIR_CLEANUP"' EXIT
 
-  curl -fsSL "$url" | tar xz -C "$TMPDIR_CLEANUP"
+  gh_curl "$url" | tar xz -C "$TMPDIR_CLEANUP"
 
   mkdir -p "$INSTALL_DIR"
   mv "$TMPDIR_CLEANUP/$BINARY" "$INSTALL_DIR/$BINARY"

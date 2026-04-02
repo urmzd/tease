@@ -57,8 +57,6 @@ runs:
         # Resolve the action ref to a concrete release tag.
         # Floating tags (e.g. v1) are git tags — not releases — so we resolve
         # them to the latest release sharing the same major version.
-        # API calls use no auth — the repo is public and the caller's token
-        # may be scoped to a different repository (e.g. GitHub App tokens).
         resolve_release_tag() {
           local api="$1" ref="$2"
 
@@ -67,10 +65,15 @@ runs:
             exit 1
           fi
 
+          local auth_args=()
+          if [ -n "${GH_TOKEN:-}" ]; then
+            auth_args+=(-H "Authorization: token ${GH_TOKEN}")
+          fi
+
           # Try exact tag match (works for non-floating refs like v1.2.3).
           # curl without -f so a 404 returns JSON instead of exit 22.
           local tag
-          tag=$(curl -sSL -H "Accept: application/vnd.github+json" \
+          tag=$(curl -sSL "${auth_args[@]}" -H "Accept: application/vnd.github+json" \
             "${api}/releases/tags/${ref}" 2>/dev/null \
             | jq -r '.tag_name // empty') || true
 
@@ -81,7 +84,7 @@ runs:
 
           echo "No exact release for ref=${ref}, searching by major version..." >&2
           local releases
-          releases=$(curl -fsSL -H "Accept: application/vnd.github+json" \
+          releases=$(curl -fsSL "${auth_args[@]}" -H "Accept: application/vnd.github+json" \
             "${api}/releases?per_page=20")
 
           local major
@@ -100,7 +103,7 @@ runs:
           echo "$tag"
         }
 
-        API="https://api.github.com/repos/${TEASR_REPO}"
+        API="${GITHUB_API_URL:-https://api.github.com}/repos/${TEASR_REPO}"
         echo "Resolving ref=${TEASR_REF} via ${API}"
         RELEASE_TAG=$(resolve_release_tag "$API" "$TEASR_REF")
 
@@ -110,7 +113,7 @@ runs:
         fi
 
         echo "Resolved release tag: ${RELEASE_TAG}"
-        URL="https://github.com/${TEASR_REPO}/releases/download/${RELEASE_TAG}/${BINARY_NAME}"
+        URL="${GITHUB_SERVER_URL:-https://github.com}/${TEASR_REPO}/releases/download/${RELEASE_TAG}/${BINARY_NAME}"
         echo "Downloading from ${URL}"
         curl -fsSL -H "Authorization: token $GH_TOKEN" "$URL" -o "$DEST"
         chmod +x "$DEST"
