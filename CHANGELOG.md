@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.4 (2026-04-02)
+
+### Bug Fixes
+
+- authenticate API curl requests for cross-org support ([0e05362](https://github.com/urmzd/teasr/commit/0e05362d45f9de1ab34258106c2a006caf3eb4d7))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.15.3...v0.15.4)
+
+
 ## 0.15.3 (2026-04-01)
 
 ### Bug Fixes
