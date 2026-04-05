@@ -3,7 +3,7 @@
 # Prevent non-code files from skewing GitHub language statistics
 
 # Markup / documentation
-*.html linguist-documentation
+showcase/*.html linguist-documentation
 *.css linguist-documentation
 *.scss linguist-documentation
 *.tex linguist-documentation
