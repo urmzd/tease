@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.15.5 (2026-04-05)
+
+### Bug Fixes
+
+- scope HTML linguist override to showcase/ only ([f01698a](https://github.com/urmzd/teasr/commit/f01698a31b7bcfcc88d3a443a8c032b9f0544865))
+
+### Miscellaneous
+
+- add linguist overrides to fix language stats (#11) ([23ad04e](https://github.com/urmzd/teasr/commit/23ad04e603f667a2651e96a682cc604bb99c2f95))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.15.4...v0.15.5)
+
+
 ## 0.15.4 (2026-04-02)
 
 ### Bug Fixes
