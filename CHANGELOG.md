@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.7 (2026-04-06)
+
+### Bug Fixes
+
+- **action**: hardcode public GitHub URLs for binary download ([56b7171](https://github.com/urmzd/teasr/commit/56b7171b08626e0e1c53a1b693b46129069b1a69))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.15.6...v0.15.7)
+
+
 ## 0.15.6 (2026-04-06)
 
 ### Refactoring
