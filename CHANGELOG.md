@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.6 (2026-04-06)
+
+### Refactoring
+
+- simplify release tag resolution in action ([2500879](https://github.com/urmzd/teasr/commit/25008796278f01ea83c6b32feedccda8e3144c3b))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.15.5...v0.15.6)
+
+
 ## 0.15.5 (2026-04-05)
 
 ### Bug Fixes
