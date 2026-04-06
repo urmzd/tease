@@ -54,68 +54,23 @@ runs:
         mkdir -p "$HOME/.local/bin"
         echo "Target=$TARGET Binary=$BINARY_NAME"
 
-        # Resolve the action ref to a concrete release tag.
-        # Floating tags (e.g. v1) are git tags — not releases — so we resolve
-        # them to the latest release sharing the same major version.
-        resolve_release_tag() {
-          local api="$1" ref="$2"
-
-          if ! command -v jq &>/dev/null; then
-            echo "::error::jq is required but not found. Install jq or use a GitHub-hosted runner."
-            exit 1
-          fi
-
-          local auth_args=()
-          if [ -n "${GH_TOKEN:-}" ]; then
-            auth_args+=(-H "Authorization: token ${GH_TOKEN}")
-          fi
-
-          # Try exact tag match (works for non-floating refs like v1.2.3).
-          # curl without -f so a 404 returns JSON instead of exit 22.
-          local tag
-          tag=$(curl -sSL "${auth_args[@]}" -H "Accept: application/vnd.github+json" \
-            "${api}/releases/tags/${ref}" 2>/dev/null \
-            | jq -r '.tag_name // empty') || true
-
-          if [ -n "$tag" ]; then
-            echo "$tag"
-            return
-          fi
-
-          echo "No exact release for ref=${ref}, searching by major version..." >&2
-          local releases
-          releases=$(curl -fsSL "${auth_args[@]}" -H "Accept: application/vnd.github+json" \
-            "${api}/releases?per_page=20")
-
-          local major
-          major=$(echo "$ref" | grep -oE '^v[0-9]+') || true
-          if [ -n "$major" ]; then
-            echo "Matching major version prefix: ${major}" >&2
-            tag=$(echo "$releases" | jq -r --arg m "${major}." \
-              '[.[] | .tag_name | select(startswith($m))][0] // empty')
-          fi
-
-          if [ -z "$tag" ]; then
-            echo "Falling back to latest release" >&2
-            tag=$(echo "$releases" | jq -r '.[0].tag_name // empty')
-          fi
-
-          echo "$tag"
-        }
-
+        # Resolve action ref to a release tag.
+        # exact tag (v1.2.3) → prefix match (v1 → v1.x.x) → latest release
         API="${GITHUB_API_URL:-https://api.github.com}/repos/${TEASR_REPO}"
-        echo "Resolving ref=${TEASR_REF} via ${API}"
-        RELEASE_TAG=$(resolve_release_tag "$API" "$TEASR_REF")
+        TAGS=$(curl -fsSL "${API}/releases?per_page=100" | jq -r '.[].tag_name')
+        RELEASE_TAG=$(echo "$TAGS" | grep -xF "$TEASR_REF" | head -1 || true)
+        [ -z "$RELEASE_TAG" ] && RELEASE_TAG=$(echo "$TAGS" | grep "^${TEASR_REF}\." | head -1 || true)
+        [ -z "$RELEASE_TAG" ] && RELEASE_TAG=$(echo "$TAGS" | head -1)
 
         if [ -z "$RELEASE_TAG" ]; then
-          echo "::error::Could not resolve ref '${TEASR_REF}' to a release tag"
+          echo "::error::No releases found for ${TEASR_REPO}"
           exit 1
         fi
+        echo "Resolved ref=${TEASR_REF} → release=${RELEASE_TAG}"
 
-        echo "Resolved release tag: ${RELEASE_TAG}"
         URL="${GITHUB_SERVER_URL:-https://github.com}/${TEASR_REPO}/releases/download/${RELEASE_TAG}/${BINARY_NAME}"
-        echo "Downloading from ${URL}"
-        curl -fsSL -H "Authorization: token $GH_TOKEN" "$URL" -o "$DEST"
+        echo "Downloading ${URL}"
+        curl -fsSL "$URL" -o "$DEST"
         chmod +x "$DEST"
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
