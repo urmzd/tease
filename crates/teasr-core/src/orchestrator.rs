@@ -375,16 +375,22 @@ fn render_splash(
         font_size: Some(font.size),
     };
 
+    let v_align = match splash.vertical_align {
+        crate::types::VerticalAlign::Top => teasr_term_render::splash::VAlign::Top,
+        crate::types::VerticalAlign::Center => teasr_term_render::splash::VAlign::Center,
+        crate::types::VerticalAlign::Bottom => teasr_term_render::splash::VAlign::Bottom,
+    };
+
     let png_data = if let Some(ref text) = splash.text {
-        teasr_term_render::splash::render_text_splash(text, cols, rows, splash.center, &opts)?
+        teasr_term_render::splash::render_text_splash(text, cols, rows, splash.center, v_align, &opts)?
     } else if let Some(ref file) = splash.file {
         let content = std::fs::read(file)
             .with_context(|| format!("failed to read splash file: {file}"))?;
-        teasr_term_render::splash::render_ansi_splash(&content, cols, rows, splash.center, &opts)?
+        teasr_term_render::splash::render_ansi_splash(&content, cols, rows, splash.center, v_align, &opts)?
     } else if let Some(ref image) = splash.image {
         let data = std::fs::read(image)
             .with_context(|| format!("failed to read splash image: {image}"))?;
-        teasr_term_render::splash::render_image_splash(&data, cols, rows, splash.center, &opts)?
+        teasr_term_render::splash::render_image_splash(&data, cols, rows, splash.center, v_align, &opts)?
     } else {
         return Ok(vec![]);
     };
