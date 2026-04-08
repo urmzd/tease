@@ -4,6 +4,15 @@ use image::GenericImageView;
 use crate::ansi_parse::{Cell, CellColor, CellGrid, TerminalEmulator};
 use crate::RenderOptions;
 
+/// Vertical alignment for splash content.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum VAlign {
+    #[default]
+    Top,
+    Center,
+    Bottom,
+}
+
 /// Render a text splash screen to PNG bytes.
 ///
 /// The text is placed in a CellGrid of the given dimensions, optionally centered.
@@ -12,9 +21,10 @@ pub fn render_text_splash(
     cols: usize,
     rows: usize,
     center: bool,
+    v_align: VAlign,
     opts: &RenderOptions,
 ) -> Result<Vec<u8>> {
-    let grid = text_to_grid(text, cols, rows, center);
+    let grid = text_to_grid(text, cols, rows, center, v_align);
     crate::render_grid_to_png(&grid, opts)
 }
 
@@ -25,49 +35,53 @@ pub fn render_ansi_splash(
     content: &[u8],
     cols: usize,
     rows: usize,
-    center: bool,
+    _center: bool,
+    v_align: VAlign,
     opts: &RenderOptions,
 ) -> Result<Vec<u8>> {
-    if center {
-        // For centered ANSI content, first parse to get actual dimensions,
-        // then re-render with offset
-        let mut emu = TerminalEmulator::new(cols, rows);
-        emu.feed(content);
-        let grid = emu.snapshot();
-        // Find used rows
-        let used_rows = grid
-            .rows
-            .iter()
-            .rposition(|row| row.iter().any(|c| c.ch != ' '))
-            .map_or(0, |r| r + 1);
-        let v_offset = if used_rows < rows {
-            (rows - used_rows) / 2
-        } else {
-            0
-        };
+    let mut emu = TerminalEmulator::new(cols, rows);
+    emu.feed(content);
+    let grid = emu.snapshot();
 
-        // Build a new grid with vertical offset
-        let mut padded = CellGrid {
-            cols,
-            rows: Vec::with_capacity(rows),
-        };
-        let empty_row = vec![Cell::default(); cols];
-        for _ in 0..v_offset {
-            padded.rows.push(empty_row.clone());
-        }
-        for row in grid.rows.into_iter().take(rows - v_offset) {
-            padded.rows.push(row);
-        }
-        while padded.rows.len() < rows {
-            padded.rows.push(empty_row.clone());
-        }
-        crate::render_grid_to_png(&padded, opts)
-    } else {
-        let mut emu = TerminalEmulator::new(cols, rows);
-        emu.feed(content);
-        let grid = emu.snapshot();
-        crate::render_grid_to_png(&grid, opts)
+    if v_align == VAlign::Top {
+        return crate::render_grid_to_png(&grid, opts);
     }
+
+    // Find used rows for vertical positioning
+    let used_rows = grid
+        .rows
+        .iter()
+        .rposition(|row| row.iter().any(|c| c.ch != ' '))
+        .map_or(0, |r| r + 1);
+    let v_offset = if used_rows < rows {
+        match v_align {
+            VAlign::Center => (rows - used_rows) / 2,
+            VAlign::Bottom => rows - used_rows,
+            VAlign::Top => unreachable!(),
+        }
+    } else {
+        0
+    };
+
+    if v_offset == 0 {
+        return crate::render_grid_to_png(&grid, opts);
+    }
+
+    let mut padded = CellGrid {
+        cols,
+        rows: Vec::with_capacity(rows),
+    };
+    let empty_row = vec![Cell::default(); cols];
+    for _ in 0..v_offset {
+        padded.rows.push(empty_row.clone());
+    }
+    for row in grid.rows.into_iter().take(rows - v_offset) {
+        padded.rows.push(row);
+    }
+    while padded.rows.len() < rows {
+        padded.rows.push(empty_row.clone());
+    }
+    crate::render_grid_to_png(&padded, opts)
 }
 
 /// Render an image splash screen to PNG bytes.
@@ -78,6 +92,7 @@ pub fn render_image_splash(
     cols: usize,
     rows: usize,
     center: bool,
+    v_align: VAlign,
     opts: &RenderOptions,
 ) -> Result<Vec<u8>> {
     // First render an empty terminal frame
@@ -118,13 +133,15 @@ pub fn render_image_splash(
         image::imageops::FilterType::Lanczos3,
     );
 
-    let (x, y) = if center {
-        (
-            ((canvas_w - scaled_w) / 2) as i64,
-            (chrome_height as i64 + (content_h as i64 - scaled_h as i64) / 2),
-        )
+    let x = if center {
+        ((canvas_w - scaled_w) / 2) as i64
     } else {
-        (padding as i64 / 2, (chrome_height + padding / 2) as i64)
+        padding as i64 / 2
+    };
+    let y = match v_align {
+        VAlign::Top => (chrome_height + padding / 2) as i64,
+        VAlign::Center => chrome_height as i64 + (content_h as i64 - scaled_h as i64) / 2,
+        VAlign::Bottom => chrome_height as i64 + content_h as i64 - scaled_h as i64,
     };
 
     image::imageops::overlay(&mut canvas, &resized, x, y);
@@ -137,12 +154,16 @@ pub fn render_image_splash(
 }
 
 /// Convert plain text into a CellGrid, optionally centering.
-fn text_to_grid(text: &str, cols: usize, rows: usize, center: bool) -> CellGrid {
+fn text_to_grid(text: &str, cols: usize, rows: usize, center: bool, v_align: VAlign) -> CellGrid {
     let lines: Vec<&str> = text.lines().collect();
     let num_lines = lines.len();
 
-    let v_offset = if center && num_lines < rows {
-        (rows - num_lines) / 2
+    let v_offset = if num_lines < rows {
+        match v_align {
+            VAlign::Top => 0,
+            VAlign::Center => (rows - num_lines) / 2,
+            VAlign::Bottom => rows - num_lines,
+        }
     } else {
         0
     };

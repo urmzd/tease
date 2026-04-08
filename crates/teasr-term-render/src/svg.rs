@@ -26,7 +26,7 @@ pub struct SvgOptions {
 pub fn render(grid: &CellGrid, theme: &Theme, opts: &SvgOptions) -> String {
     let font_family = opts.font_family.as_deref().unwrap_or(DEFAULT_FONT_FAMILY);
     let font_size = opts.font_size.unwrap_or(DEFAULT_FONT_SIZE);
-    let (num_rows, num_cols) = grid.dimensions();
+    let (num_rows, num_cols) = (grid.rows.len(), grid.cols);
     let content_width = num_cols as f64 * CELL_WIDTH;
     let content_height = num_rows as f64 * CELL_HEIGHT;
     let total_width = content_width + PADDING * 2.0;

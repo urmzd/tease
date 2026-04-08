@@ -6,7 +6,7 @@ pub mod themes;
 
 use anyhow::Result;
 
-pub use ansi_parse::{CellGrid, TerminalEmulator};
+pub use ansi_parse::{Cell, CellGrid, TerminalEmulator};
 pub use rasterize::{check_font_available, load_extra_font};
 
 /// Options for rendering terminal output to PNG.
