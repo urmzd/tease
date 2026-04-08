@@ -240,9 +240,21 @@ pub struct SplashConfig {
     /// Duration in ms to show the splash frame
     #[serde(default = "default_splash_duration")]
     pub duration: u64,
-    /// Center the content vertically and horizontally
+    /// Center the content horizontally
     #[serde(default = "default_true")]
     pub center: bool,
+    /// Vertical alignment of splash content: "top", "center", or "bottom"
+    #[serde(default)]
+    pub vertical_align: VerticalAlign,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VerticalAlign {
+    #[default]
+    Top,
+    Center,
+    Bottom,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
