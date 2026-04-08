@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.16.0 (2026-04-08)
+
+### Features
+
+- **capture**: normalize grid for unbounded terminal emulators ([0f77d69](https://github.com/urmzd/teasr/commit/0f77d694382a5201f8fa39197a999d87c0de0ac0))
+- **orchestrator**: wire vertical alignment through splash pipeline ([0e71a33](https://github.com/urmzd/teasr/commit/0e71a334b95916747a6f174b7395a877dbb8fde6))
+- **render**: implement vertical alignment in splash and grid rendering ([d4c966f](https://github.com/urmzd/teasr/commit/d4c966fcd3c94632f9a987be225830234a2bfdc7))
+- **types**: add vertical alignment support for splash content ([f7b13b5](https://github.com/urmzd/teasr/commit/f7b13b578fb9126554065fc5facf5aaba99cd221))
+
+### Documentation
+
+- add LICENSE to sub-crates for publishing compliance ([07899c4](https://github.com/urmzd/teasr/commit/07899c4d06cc636673c57ab82ea9948068fc8217))
+
+### Miscellaneous
+
+- **gitignore**: ignore .fastembed_cache ([0c4877a](https://github.com/urmzd/teasr/commit/0c4877a3bbd81713b7f3fd17defe0709c2554ea9))
+- **deps**: update crate versions to 0.15.7 ([cc4faaa](https://github.com/urmzd/teasr/commit/cc4faaae0cd848cc887f02f06feb925e2806ee71))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.15.7...v0.16.0)
+
+
 ## 0.15.7 (2026-04-06)
 
 ### Bug Fixes
