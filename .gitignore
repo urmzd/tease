@@ -4,3 +4,6 @@ node_modules/
 
 # Rust
 target/
+
+# Embedding model cache
+.fastembed_cache/
