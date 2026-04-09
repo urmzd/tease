@@ -16,17 +16,8 @@ pub async fn render_with_chrome_frame(
     theme: &str,
 ) -> Result<Vec<u8>> {
     let img = image::load_from_memory(png_data).context("failed to decode PNG for framing")?;
-    let img_w = img.width();
-    let img_h = img.height();
-
-    const MAX_WIDTH: u32 = 1280;
-    let scale = if img_w > MAX_WIDTH {
-        MAX_WIDTH as f64 / img_w as f64
-    } else {
-        1.0
-    };
-    let render_w = (img_w as f64 * scale).round() as u32;
-    let render_h = (img_h as f64 * scale).round() as u32;
+    let render_w = img.width();
+    let render_h = img.height();
 
     let (bg, chrome_bg, fg, btn_close, btn_min, btn_max) = match theme {
         "monokai" => ("#272822", "#1e1f1c", "#f8f8f2", "#f92672", "#f4bf75", "#a6e22e"),
