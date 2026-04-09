@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.17.4 (2026-04-09)
+
+### Bug Fixes
+
+- **install**: download bare binary instead of non-existent tarball ([6b78e98](https://github.com/urmzd/teasr/commit/6b78e98658a307ccf94ff8a8590a0c1f96643552))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.17.3...v0.17.4)
+
+
 ## 0.17.3 (2026-04-09)
 
 ### Documentation
