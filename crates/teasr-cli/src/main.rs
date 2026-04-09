@@ -21,6 +21,10 @@ enum Command {
         #[arg(long)]
         check: bool,
     },
+    /// Self-update teasr to the latest release
+    Update,
+    /// Print the current version
+    Version,
     /// Run capture scenes from teasr.toml
     Showme {
         /// Path to config file (default: search for teasr.toml)
@@ -137,6 +141,22 @@ async fn main() -> Result<()> {
                     anyhow::bail!("teasr timed out after {}ms", timeout_dur.as_millis());
                 }
             }
+        }
+        Some(Command::Update) => {
+            eprintln!("current version: {}", env!("CARGO_PKG_VERSION"));
+            match agentspec_update::self_update("urmzd/teasr", env!("CARGO_PKG_VERSION"), "teasr")? {
+                agentspec_update::UpdateResult::AlreadyUpToDate => {
+                    eprintln!("already up to date");
+                }
+                agentspec_update::UpdateResult::Updated { from, to } => {
+                    eprintln!("updated: {from} → {to}");
+                }
+            }
+            Ok(())
+        }
+        Some(Command::Version) => {
+            println!("teasr v{}", env!("CARGO_PKG_VERSION"));
+            Ok(())
         }
         None => {
             Cli::parse_from(["teasr", "--help"]);
