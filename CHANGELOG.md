@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.17.3 (2026-04-09)
+
+### Documentation
+
+- **showcase**: update demo assets ([05f6f00](https://github.com/urmzd/teasr/commit/05f6f00a9d58ea90e108aee97dadf01e47abcdb3))
+
+### Refactoring
+
+- **chrome-frame**: remove image scaling constraint ([8044ec2](https://github.com/urmzd/teasr/commit/8044ec2d3c880aa7a90e439f3fa95fbacc7d3a3f))
+- **terminal**: simplify grid viewport normalization ([a191707](https://github.com/urmzd/teasr/commit/a191707d424948b0d623ba0afef6a0edb42317bc))
+
+### Miscellaneous
+
+- **deps**: bump version to 0.17.1 ([5729993](https://github.com/urmzd/teasr/commit/57299931bdfb2ca631255bd028e267b7f1cf3d53))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.17.2...v0.17.3)
+
+
 ## 0.17.2 (2026-04-09)
 
 ### Bug Fixes
