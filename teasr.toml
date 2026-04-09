@@ -61,18 +61,6 @@ key = "enter"
 type = "wait"
 duration = 2000
 
-# ── Screen: Finder window showing the project directory ──
-[[scenes]]
-type = "screen"
-name = "finder"
-window = "Finder"
-setup = "open ."
-delay = 2000
-formats = [{ output_type = "png" }]
-
-[[scenes.interactions]]
-type = "snapshot"
-
 # ── File: local HTML rendered via headless Chrome ──
 [[scenes]]
 type = "file"
@@ -84,10 +72,10 @@ formats = [{ output_type = "png" }]
 [[scenes.interactions]]
 type = "snapshot"
 
-# ── Markdown: README rendered as styled HTML ──
+# ── Markdown: self-contained demo rendered as styled HTML ──
 [[scenes]]
 type = "markdown"
-path = "./README.md"
+path = "./showcase/markdown-demo.md"
 name = "markdown-demo"
 theme = "light"
 viewport = { width = 800, height = 600 }
