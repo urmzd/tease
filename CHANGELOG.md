@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.17.2 (2026-04-09)
+
+### Bug Fixes
+
+- **ci**: clean up cargo publish flags and checkout release tag ([1bc8e80](https://github.com/urmzd/teasr/commit/1bc8e802a7473ddacf86e6b06dd9b89d86ff09af))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.17.1...v0.17.2)
+
+
 ## 0.17.1 (2026-04-09)
 
 ### Bug Fixes
