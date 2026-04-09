@@ -53,18 +53,13 @@ main() {
 
   target="$(detect_target)"
   version="${1:-$(get_latest_version)}"
-  asset="teasr-${target}.tar.gz"
+  asset="teasr-${target}"
   url="https://github.com/${REPO}/releases/download/${version}/${asset}"
 
   echo "Installing teasr ${version} for ${target}..."
 
-  TMPDIR_CLEANUP="$(mktemp -d)"
-  trap 'rm -rf "$TMPDIR_CLEANUP"' EXIT
-
-  gh_curl "$url" | tar xz -C "$TMPDIR_CLEANUP"
-
   mkdir -p "$INSTALL_DIR"
-  mv "$TMPDIR_CLEANUP/$BINARY" "$INSTALL_DIR/$BINARY"
+  gh_curl "$url" -o "$INSTALL_DIR/$BINARY"
   chmod +x "$INSTALL_DIR/$BINARY"
 
   echo "teasr installed to $INSTALL_DIR/$BINARY"
