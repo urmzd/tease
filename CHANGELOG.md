@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.17.1 (2026-04-09)
+
+### Bug Fixes
+
+- **showcase**: replace flaky finder scene with self-contained markdown demo ([c15d872](https://github.com/urmzd/teasr/commit/c15d872d37666df604d0527b7b373e28d40eeb6a))
+
+### Documentation
+
+- **showcase**: update demonstration assets ([8fd18f2](https://github.com/urmzd/teasr/commit/8fd18f2e619c506f6397340f72b0b09038c68944))
+
+### Miscellaneous
+
+- **workflows**: trigger ci pipeline on main branch pushes ([563113f](https://github.com/urmzd/teasr/commit/563113f4d55f2777e941ce35e844691a83933007))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.17.0...v0.17.1)
+
+
 ## 0.17.0 (2026-04-09)
 
 ### Features
