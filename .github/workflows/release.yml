@@ -155,6 +155,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -168,8 +170,8 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: |
-          cargo publish -p teasr-term-render --allow-dirty --no-verify
+          cargo publish -p teasr-term-render
           sleep 30
-          cargo publish -p teasr-core --allow-dirty --no-verify
+          cargo publish -p teasr-core
           sleep 30
-          cargo publish -p teasr --allow-dirty --no-verify
+          cargo publish -p teasr
