@@ -72,20 +72,18 @@ impl TerminalBackend {
         }
         let mut grid = emulator.snapshot();
 
-        // For unbounded emulators (rows not specified), normalize the grid to a
-        // fixed 24-row viewport so every frame has consistent dimensions —
-        // matching the intro/outro splash size.
-        if self.rows.is_none() {
-            let viewport_rows = 24;
-            let cols = grid.cols;
-            if grid.rows.len() > viewport_rows {
-                let start = grid.rows.len() - viewport_rows;
-                grid.rows = grid.rows.split_off(start);
-            } else {
-                let empty_row = vec![teasr_term_render::Cell::default(); cols];
-                while grid.rows.len() < viewport_rows {
-                    grid.rows.push(empty_row.clone());
-                }
+        // Normalize the grid to a fixed viewport so every frame has consistent
+        // dimensions. For bounded emulators use the configured row count; for
+        // unbounded ones default to 24 rows (matching intro/outro splash size).
+        let viewport_rows = self.rows.unwrap_or(24);
+        let cols = grid.cols;
+        if grid.rows.len() > viewport_rows {
+            let start = grid.rows.len() - viewport_rows;
+            grid.rows = grid.rows.split_off(start);
+        } else {
+            let empty_row = vec![teasr_term_render::Cell::default(); cols];
+            while grid.rows.len() < viewport_rows {
+                grid.rows.push(empty_row.clone());
             }
         }
 
