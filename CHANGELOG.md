@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.17.0 (2026-04-09)
+
+### Features
+
+- **cli**: add self-update and version subcommands ([32bb7d8](https://github.com/urmzd/teasr/commit/32bb7d855c6fe4140e2d4698de5398274293eb42))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.16.0...v0.17.0)
+
+
 ## 0.16.0 (2026-04-08)
 
 ### Features
