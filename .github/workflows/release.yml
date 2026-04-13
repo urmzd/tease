@@ -138,7 +138,7 @@ jobs:
           chmod +x release-assets/teasr-*[!e]
           ls -la release-assets/
 
-      - uses: urmzd/sr@v3
+      - uses: urmzd/sr@v4
         id: sr
         with:
           command: release
