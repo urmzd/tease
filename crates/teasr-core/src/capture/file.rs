@@ -58,9 +58,7 @@ impl CaptureBackend for FileBackend {
 
         let mut opts = LaunchOptions::new(self.viewport.width, self.viewport.height);
         if self.is_pdf() {
-            opts = opts
-                .arg("--disable-extensions")
-                .arg("--disable-plugins");
+            opts = opts.arg("--disable-extensions").arg("--disable-plugins");
         }
 
         let browser = browser::launch(opts).await?;
@@ -92,7 +90,10 @@ impl CaptureBackend for FileBackend {
 
     async fn execute(&mut self, interaction: &Interaction) -> Result<Vec<CapturedFrame>> {
         match interaction {
-            Interaction::Wait { duration, idle_timeout } => {
+            Interaction::Wait {
+                duration,
+                idle_timeout,
+            } => {
                 let page = self.page.as_ref().unwrap();
                 install_idle_tracker(&**page).await;
                 wait_for_idle(*duration, *idle_timeout, 50, || page_has_activity(&**page)).await;

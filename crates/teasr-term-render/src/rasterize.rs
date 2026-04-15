@@ -41,15 +41,13 @@ pub fn svg_to_png(svg: &str, font_family: Option<&str>) -> Result<Vec<u8>> {
         ..Default::default()
     };
 
-    let tree = usvg::Tree::from_str(svg, &opts)
-        .context("failed to parse SVG")?;
+    let tree = usvg::Tree::from_str(svg, &opts).context("failed to parse SVG")?;
 
     let size = tree.size();
     let width = size.width().ceil() as u32;
     let height = size.height().ceil() as u32;
 
-    let mut pixmap = tiny_skia::Pixmap::new(width, height)
-        .context("failed to create pixmap")?;
+    let mut pixmap = tiny_skia::Pixmap::new(width, height).context("failed to create pixmap")?;
 
     resvg::render(&tree, tiny_skia::Transform::default(), &mut pixmap.as_mut());
 

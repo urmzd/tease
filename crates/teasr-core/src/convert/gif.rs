@@ -60,7 +60,9 @@ pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path, config: &GifConf
     let write_handle = std::thread::spawn(move || -> Result<()> {
         let file = std::fs::File::create(&gif_path_owned)
             .with_context(|| format!("failed to create {}", gif_path_owned.display()))?;
-        writer.write(file, &mut gifski::progress::NoProgress {}).context("GIF write failed")?;
+        writer
+            .write(file, &mut gifski::progress::NoProgress {})
+            .context("GIF write failed")?;
         Ok(())
     });
 

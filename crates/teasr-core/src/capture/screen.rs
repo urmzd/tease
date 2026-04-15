@@ -152,7 +152,10 @@ impl CaptureBackend for ScreenBackend {
                     duration_ms: self.frame_duration,
                 }])
             }
-            Interaction::Wait { duration, idle_timeout } => {
+            Interaction::Wait {
+                duration,
+                idle_timeout,
+            } => {
                 let poll_ms = self.frame_duration.max(100);
                 let mut last_pixels: Option<Vec<u8>> = None;
                 wait_for_idle(*duration, *idle_timeout, poll_ms, || {
@@ -239,10 +242,7 @@ fn capture_monitor(display: Option<u32>) -> Result<image::RgbaImage> {
             .nth(idx as usize)
             .context("display index out of range")?
     } else {
-        screens
-            .into_iter()
-            .next()
-            .context("no monitors found")?
+        screens.into_iter().next().context("no monitors found")?
     };
 
     monitor.capture_image().context("failed to capture screen")

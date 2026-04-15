@@ -187,11 +187,7 @@ fn collect_text_spans(row: &[Cell], num_cols: usize, theme: &Theme) -> Vec<TextS
     let mut i = 0;
     while i < num_cols && i < row.len() {
         // Skip spaces with default styling
-        if row[i].ch == ' '
-            && !row[i].bold
-            && !row[i].italic
-            && !row[i].underline
-        {
+        if row[i].ch == ' ' && !row[i].bold && !row[i].italic && !row[i].underline {
             i += 1;
             continue;
         }

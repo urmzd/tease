@@ -20,8 +20,12 @@ pub async fn render_with_chrome_frame(
     let render_h = img.height();
 
     let (bg, chrome_bg, fg, btn_close, btn_min, btn_max) = match theme {
-        "monokai" => ("#272822", "#1e1f1c", "#f8f8f2", "#f92672", "#f4bf75", "#a6e22e"),
-        _ => ("#282a36", "#1e1f29", "#f8f8f2", "#ff5555", "#f1fa8c", "#50fa7b"),
+        "monokai" => (
+            "#272822", "#1e1f1c", "#f8f8f2", "#f92672", "#f4bf75", "#a6e22e",
+        ),
+        _ => (
+            "#282a36", "#1e1f29", "#f8f8f2", "#ff5555", "#f1fa8c", "#50fa7b",
+        ),
     };
 
     let title_text = title.unwrap_or("Screen Capture");

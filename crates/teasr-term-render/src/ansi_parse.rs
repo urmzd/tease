@@ -69,9 +69,11 @@ impl Cell {
         let color = if self.inverse { &self.fg } else { &self.bg };
         match color {
             CellColor::Default => theme.background,
-            CellColor::Ansi(idx) => {
-                theme.ansi.get(*idx as usize).copied().unwrap_or(theme.background)
-            }
+            CellColor::Ansi(idx) => theme
+                .ansi
+                .get(*idx as usize)
+                .copied()
+                .unwrap_or(theme.background),
             CellColor::Rgb(_, _, _) => theme.background,
         }
     }

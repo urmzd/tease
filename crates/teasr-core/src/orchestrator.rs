@@ -38,16 +38,17 @@ fn build_backend(
             ..
         } => {
             let effective_font = font.as_ref().unwrap_or(global_font);
-            let backend: Box<dyn CaptureBackend> = Box::new(capture::terminal::TerminalBackend::new(
-                cols.unwrap_or(80),
-                *rows,
-                theme.as_deref().unwrap_or("dracula"),
-                name.clone(),
-                frame_duration.unwrap_or(default_fd),
-                cwd.clone(),
-                Some(effective_font.family.clone()),
-                Some(effective_font.size),
-            ));
+            let backend: Box<dyn CaptureBackend> =
+                Box::new(capture::terminal::TerminalBackend::new(
+                    cols.unwrap_or(80),
+                    *rows,
+                    theme.as_deref().unwrap_or("dracula"),
+                    name.clone(),
+                    frame_duration.unwrap_or(default_fd),
+                    cwd.clone(),
+                    Some(effective_font.family.clone()),
+                    Some(effective_font.size),
+                ));
             (backend, None)
         }
         SceneConfig::Web {
@@ -160,7 +161,10 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
     }
     // Also load per-scene custom fonts
     for scene in &config.scenes {
-        if let SceneConfig::Terminal { font: Some(ref f), .. } = scene {
+        if let SceneConfig::Terminal {
+            font: Some(ref f), ..
+        } = scene
+        {
             if let Some(ref path) = f.path {
                 teasr_term_render::load_extra_font(std::path::Path::new(path))?;
             }
@@ -202,7 +206,11 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
         {
             Ok(result) => {
                 let elapsed = start.elapsed();
-                let detail = format!("{} frames in {:.1}s", result.files.len(), elapsed.as_secs_f64());
+                let detail = format!(
+                    "{} frames in {:.1}s",
+                    result.files.len(),
+                    elapsed.as_secs_f64()
+                );
                 ui::spinner_done(&pb, Some(&detail));
                 results.push(result);
             }
@@ -218,7 +226,11 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
     }
 
     ui::phase_ok(
-        &format!("{}/{} scenes captured successfully", results.len(), config.scenes.len()),
+        &format!(
+            "{}/{} scenes captured successfully",
+            results.len(),
+            config.scenes.len()
+        ),
         None,
     );
     Ok(results)
@@ -237,12 +249,15 @@ async fn capture_scene(
     pb: &indicatif::ProgressBar,
 ) -> Result<CaptureResult> {
     let scene_name = scene.name().to_string();
-    let formats = scene
-        .formats()
-        .as_ref()
-        .unwrap_or(&output_config.formats);
+    let formats = scene.formats().as_ref().unwrap_or(&output_config.formats);
 
-    let (mut backend, _tmp_file) = build_backend(scene, global_viewport, server, global_frame_duration_ms, global_font)?;
+    let (mut backend, _tmp_file) = build_backend(
+        scene,
+        global_viewport,
+        server,
+        global_frame_duration_ms,
+        global_font,
+    )?;
     pb.set_message(format!("{scene_name}: setting up"));
     backend.setup().await?;
 
@@ -355,7 +370,10 @@ fn interaction_label(interaction: &crate::types::Interaction) -> String {
             format!("scrolling to {}", selector.as_deref().unwrap_or("top"))
         }
         Interaction::Snapshot { name, .. } => {
-            format!("snapshot{}", name.as_ref().map(|n| format!(" ({n})")).unwrap_or_default())
+            format!(
+                "snapshot{}",
+                name.as_ref().map(|n| format!(" ({n})")).unwrap_or_default()
+            )
         }
     }
 }
@@ -382,15 +400,36 @@ fn render_splash(
     };
 
     let png_data = if let Some(ref text) = splash.text {
-        teasr_term_render::splash::render_text_splash(text, cols, rows, splash.center, v_align, &opts)?
+        teasr_term_render::splash::render_text_splash(
+            text,
+            cols,
+            rows,
+            splash.center,
+            v_align,
+            &opts,
+        )?
     } else if let Some(ref file) = splash.file {
-        let content = std::fs::read(file)
-            .with_context(|| format!("failed to read splash file: {file}"))?;
-        teasr_term_render::splash::render_ansi_splash(&content, cols, rows, splash.center, v_align, &opts)?
+        let content =
+            std::fs::read(file).with_context(|| format!("failed to read splash file: {file}"))?;
+        teasr_term_render::splash::render_ansi_splash(
+            &content,
+            cols,
+            rows,
+            splash.center,
+            v_align,
+            &opts,
+        )?
     } else if let Some(ref image) = splash.image {
         let data = std::fs::read(image)
             .with_context(|| format!("failed to read splash image: {image}"))?;
-        teasr_term_render::splash::render_image_splash(&data, cols, rows, splash.center, v_align, &opts)?
+        teasr_term_render::splash::render_image_splash(
+            &data,
+            cols,
+            rows,
+            splash.center,
+            v_align,
+            &opts,
+        )?
     } else {
         return Ok(vec![]);
     };
