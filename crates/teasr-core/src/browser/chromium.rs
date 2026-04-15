@@ -39,9 +39,7 @@ impl ChromiumEngine {
             .await
             .context("failed to launch browser")?;
 
-        let handle = tokio::spawn(async move {
-            while let Some(_event) = handler.next().await {}
-        });
+        let handle = tokio::spawn(async move { while let Some(_event) = handler.next().await {} });
 
         Ok(Self {
             inner: browser,

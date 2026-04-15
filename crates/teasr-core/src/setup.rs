@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use crossterm::style::Stylize;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -91,10 +91,7 @@ pub async fn install_font(name: &str) -> Result<()> {
         .context("failed to download font")?;
 
     if !response.status().is_success() {
-        bail!(
-            "download failed: HTTP {}",
-            response.status()
-        );
+        bail!("download failed: HTTP {}", response.status());
     }
 
     let bytes = response.bytes().await.context("failed to read response")?;

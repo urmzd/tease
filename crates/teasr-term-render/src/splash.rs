@@ -117,11 +117,7 @@ pub fn render_image_splash(
     let content_h = canvas_h.saturating_sub(chrome_height + padding);
 
     let (ow, oh) = overlay_img.dimensions();
-    let scale = f64::min(
-        content_w as f64 / ow as f64,
-        content_h as f64 / oh as f64,
-    )
-    .min(1.0); // Don't upscale
+    let scale = f64::min(content_w as f64 / ow as f64, content_h as f64 / oh as f64).min(1.0); // Don't upscale
 
     let scaled_w = (ow as f64 * scale) as u32;
     let scaled_h = (oh as f64 * scale) as u32;

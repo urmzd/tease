@@ -190,7 +190,11 @@ impl CaptureBackend for TerminalBackend {
         self.child = Some(child);
 
         // Poll for shell prompt instead of sleeping a fixed duration
-        wait_for_buffer_match(self.buffer.as_ref().unwrap(), b"$ ", Duration::from_millis(2000));
+        wait_for_buffer_match(
+            self.buffer.as_ref().unwrap(),
+            b"$ ",
+            Duration::from_millis(2000),
+        );
 
         // Resolve the target working directory
         let abs_cwd = {
@@ -223,7 +227,11 @@ impl CaptureBackend for TerminalBackend {
                 )
                 .context("failed to cd into cwd")?;
             // Poll for prompt after cd/clear instead of sleeping a fixed duration
-            wait_for_buffer_match(self.buffer.as_ref().unwrap(), b"$ ", Duration::from_millis(2000));
+            wait_for_buffer_match(
+                self.buffer.as_ref().unwrap(),
+                b"$ ",
+                Duration::from_millis(2000),
+            );
             // Drain the buffer so the cd/clone doesn't appear in output
             if let Some(ref buffer) = self.buffer {
                 buffer.lock().unwrap().clear();
@@ -278,13 +286,20 @@ impl CaptureBackend for TerminalBackend {
                     duration_ms: self.frame_duration,
                 }])
             }
-            Interaction::Wait { duration, idle_timeout } => {
+            Interaction::Wait {
+                duration,
+                idle_timeout,
+            } => {
                 let interval = self.frame_duration.max(50);
                 let steps = (*duration / interval).max(1);
                 let step_ms = *duration / steps;
                 let mut frames = Vec::new();
                 let mut idle_ms: u64 = 0;
-                let idle_limit = if *idle_timeout == 0 { u64::MAX } else { *idle_timeout };
+                let idle_limit = if *idle_timeout == 0 {
+                    u64::MAX
+                } else {
+                    *idle_timeout
+                };
 
                 for _ in 0..steps {
                     thread::sleep(Duration::from_millis(step_ms));
@@ -307,18 +322,19 @@ impl CaptureBackend for TerminalBackend {
                     });
 
                     if idle_ms >= idle_limit {
-                        debug!("idle timeout reached ({}ms idle), ending wait early", idle_ms);
+                        debug!(
+                            "idle timeout reached ({}ms idle), ending wait early",
+                            idle_ms
+                        );
                         break;
                     }
                 }
                 Ok(frames)
             }
-            Interaction::Snapshot { .. } => {
-                Ok(vec![CapturedFrame {
-                    png_data: self.drain_and_snapshot()?,
-                    duration_ms: self.frame_duration,
-                }])
-            }
+            Interaction::Snapshot { .. } => Ok(vec![CapturedFrame {
+                png_data: self.drain_and_snapshot()?,
+                duration_ms: self.frame_duration,
+            }]),
             other => {
                 debug!(
                     "skipping unsupported interaction: {:?} ({})",

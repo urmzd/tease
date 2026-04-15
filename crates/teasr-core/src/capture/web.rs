@@ -17,7 +17,12 @@ pub struct WebBackend {
 }
 
 impl WebBackend {
-    pub fn new(url: String, viewport: ViewportConfig, frame_duration: u64, full_page: bool) -> Self {
+    pub fn new(
+        url: String,
+        viewport: ViewportConfig,
+        frame_duration: u64,
+        full_page: bool,
+    ) -> Self {
         Self {
             url,
             viewport,
@@ -84,7 +89,10 @@ impl CaptureBackend for WebBackend {
                 }
                 Ok(vec![])
             }
-            Interaction::Wait { duration, idle_timeout } => {
+            Interaction::Wait {
+                duration,
+                idle_timeout,
+            } => {
                 install_idle_tracker(&**page).await;
                 wait_for_idle(*duration, *idle_timeout, 50, || page_has_activity(&**page)).await;
                 Ok(vec![])

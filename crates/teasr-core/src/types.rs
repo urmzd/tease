@@ -91,11 +91,22 @@ fn default_idle_timeout() -> u64 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Interaction {
-    Type { text: String, speed: Option<u64> },
-    Key { key: String },
-    Click { selector: Option<String> },
-    Hover { selector: Option<String> },
-    ScrollTo { selector: Option<String> },
+    Type {
+        text: String,
+        speed: Option<u64>,
+    },
+    Key {
+        key: String,
+    },
+    Click {
+        selector: Option<String>,
+    },
+    Hover {
+        selector: Option<String>,
+    },
+    ScrollTo {
+        selector: Option<String>,
+    },
     Wait {
         /// Maximum time to wait in ms (default: 30000). Acts as a timeout —
         /// the wait exits early once terminal output has settled.
@@ -106,7 +117,9 @@ pub enum Interaction {
         #[serde(default = "default_idle_timeout")]
         idle_timeout: u64,
     },
-    Snapshot { name: Option<String> },
+    Snapshot {
+        name: Option<String>,
+    },
 }
 
 /// Wraps an Interaction with metadata. Hidden steps execute but produce no visible frames.

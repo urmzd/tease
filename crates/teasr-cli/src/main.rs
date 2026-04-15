@@ -5,7 +5,11 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
-#[command(name = "teasr", about = "Capture showcase screenshots and GIFs", version)]
+#[command(
+    name = "teasr",
+    about = "Capture showcase screenshots and GIFs",
+    version
+)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
@@ -205,9 +209,9 @@ async fn run(
 
     if let Some(ref filter) = scenes {
         config.scenes.retain(|s| {
-            filter.iter().any(|f| {
-                s.name().eq_ignore_ascii_case(f) || s.scene_type().eq_ignore_ascii_case(f)
-            })
+            filter
+                .iter()
+                .any(|f| s.name().eq_ignore_ascii_case(f) || s.scene_type().eq_ignore_ascii_case(f))
         });
         if config.scenes.is_empty() {
             anyhow::bail!("no scenes matched filter: {}", filter.join(", "));

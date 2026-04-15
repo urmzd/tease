@@ -19,8 +19,8 @@ pub fn discover_config(start: &Path) -> Option<PathBuf> {
 
 /// Load and resolve config from a path.
 pub fn load_config(path: &Path) -> Result<ResolvedConfig> {
-    let content =
-        std::fs::read_to_string(path).with_context(|| format!("failed to read {}", path.display()))?;
+    let content = std::fs::read_to_string(path)
+        .with_context(|| format!("failed to read {}", path.display()))?;
     let config: TeaseConfig =
         toml::from_str(&content).with_context(|| format!("failed to parse {}", path.display()))?;
 
