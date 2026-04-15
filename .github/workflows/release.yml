@@ -138,10 +138,9 @@ jobs:
           chmod +x release-assets/teasr-*[!e]
           ls -la release-assets/
 
-      - uses: urmzd/sr@v4
+      - uses: urmzd/sr@v7
         id: sr
         with:
-          command: release
           force: ${{ inputs.force || false }}
           github-token: ${{ steps.app-token.outputs.token }}
           artifacts: "release-assets/*"
