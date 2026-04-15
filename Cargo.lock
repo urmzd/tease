@@ -9,19 +9,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
-name = "agentspec-update"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49b41cf13d5f1daaf731e67a34204d20c6c9d362256361a982787cb0a1f83399"
-dependencies = [
- "anyhow",
- "serde",
- "serde_json",
- "sha2",
- "ureq",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3410,20 +3397,23 @@ checksum = "df7f62577c25e07834649fc3b39fafdc597c0a3527dc1c60129201ccfcbaa50c"
 
 [[package]]
 name = "teasr"
-version = "0.17.1"
+version = "0.17.4"
 dependencies = [
- "agentspec-update",
  "anyhow",
  "clap",
+ "serde",
+ "serde_json",
+ "sha2",
  "teasr-core",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "ureq",
 ]
 
 [[package]]
 name = "teasr-core"
-version = "0.17.1"
+version = "0.17.4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3454,7 +3444,7 @@ dependencies = [
 
 [[package]]
 name = "teasr-term-render"
-version = "0.17.1"
+version = "0.17.4"
 dependencies = [
  "anstyle-parse 0.2.7",
  "anyhow",

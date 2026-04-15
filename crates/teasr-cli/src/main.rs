@@ -1,3 +1,5 @@
+mod self_update;
+
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -144,11 +146,11 @@ async fn main() -> Result<()> {
         }
         Some(Command::Update) => {
             eprintln!("current version: {}", env!("CARGO_PKG_VERSION"));
-            match agentspec_update::self_update("urmzd/teasr", env!("CARGO_PKG_VERSION"), "teasr")? {
-                agentspec_update::UpdateResult::AlreadyUpToDate => {
+            match self_update::self_update("urmzd/teasr", env!("CARGO_PKG_VERSION"), "teasr")? {
+                self_update::UpdateResult::AlreadyUpToDate => {
                     eprintln!("already up to date");
                 }
-                agentspec_update::UpdateResult::Updated { from, to } => {
+                self_update::UpdateResult::Updated { from, to } => {
                     eprintln!("updated: {from} → {to}");
                 }
             }
