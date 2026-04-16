@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.1 (2026-04-16)
+
+### Bug Fixes
+
+- **terminal**: preserve initial output for direct-spawn TUI captures ([6078fec](https://github.com/urmzd/teasr/commit/6078fec7fb90ecf6060041aa3df8e6eee19fd7cd))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.18.0...v0.18.1)
+
+
 ## 0.18.0 (2026-04-16)
 
 ### Features
