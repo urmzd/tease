@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.18.0 (2026-04-16)
+
+### Features
+
+- **terminal**: add `command` field for direct process spawning ([b0c57c8](https://github.com/urmzd/teasr/commit/b0c57c8c2b1b12281bbccfda5b0cffda86cb6b0c))
+
+### Bug Fixes
+
+- rewrite install.sh to standard pattern with POSIX sh ([b577017](https://github.com/urmzd/teasr/commit/b577017b691b6fe610cfa57f425b7160c9dd8923))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.17.6...v0.18.0)
+
+
 ## 0.17.6 (2026-04-16)
 
 ### Refactoring
