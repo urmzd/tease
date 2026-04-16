@@ -226,22 +226,13 @@ impl CaptureBackend for TerminalBackend {
         self.child = Some(child);
 
         if self.command.is_some() {
-            // Direct spawn: wait for initial output from the process
+            // Direct spawn: wait for the process to produce initial output
+            // so the first snapshot captures the rendered UI. Do NOT drain
+            // the buffer — for TUI apps the initial output IS the content.
             wait_for_buffer_activity(
                 self.buffer.as_ref().unwrap(),
                 Duration::from_millis(2000),
             );
-            // Drain setup output so the first visible frame is clean
-            if let Some(ref buffer) = self.buffer {
-                buffer.lock().unwrap().clear();
-            }
-            if let Some(ref mut emulator) = self.emulator {
-                *emulator = if let Some(rows) = self.rows {
-                    teasr_term_render::TerminalEmulator::new(self.cols, rows)
-                } else {
-                    teasr_term_render::TerminalEmulator::new_unbounded(self.cols)
-                };
-            }
         } else {
             // Interactive shell: wait for prompt, cd, clear
             wait_for_buffer_match(
