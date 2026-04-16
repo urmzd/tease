@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.17.6 (2026-04-16)
+
+### Refactoring
+
+- replace embed-src references with fsrc (#14) ([a78951d](https://github.com/urmzd/teasr/commit/a78951d97a201ff090a11bb1be46ab9829ca9961))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.17.5...v0.17.6)
+
+
 ## 0.17.5 (2026-04-16)
 
 ### Bug Fixes
