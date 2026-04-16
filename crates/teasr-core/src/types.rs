@@ -199,6 +199,10 @@ pub enum SceneConfig {
         cols: Option<usize>,
         rows: Option<usize>,
         cwd: Option<String>,
+        /// Spawn this command directly in the PTY instead of an interactive
+        /// shell.  The process replaces the shell via `exec`, so teardown
+        /// only needs to kill the process — no orphaned shell.
+        command: Option<String>,
         font: Option<FontConfig>,
         intro: Option<SplashConfig>,
         outro: Option<SplashConfig>,

@@ -16,6 +16,7 @@ pub struct TerminalBackend {
     title: Option<String>,
     frame_duration: u64,
     cwd: Option<String>,
+    command: Option<String>,
     font_family: Option<String>,
     font_size: Option<f64>,
     writer: Option<Box<dyn std::io::Write + Send>>,
@@ -354,12 +355,28 @@ impl CaptureBackend for TerminalBackend {
     }
 
     async fn teardown(&mut self) -> Result<()> {
+        // Try a graceful exit first
         if let Some(ref mut writer) = self.writer {
             let _ = writer.write_all(b"exit\n");
         }
         self.writer = None;
+
         if let Some(mut child) = self.child.take() {
-            let _ = child.wait();
+            // Give the child a moment to exit gracefully, then kill it
+            let deadline = Instant::now() + Duration::from_secs(2);
+            loop {
+                match child.try_wait() {
+                    Ok(Some(_)) => break,
+                    Ok(None) if Instant::now() >= deadline => {
+                        debug!("child did not exit in time, killing");
+                        let _ = child.kill();
+                        let _ = child.wait();
+                        break;
+                    }
+                    Ok(None) => thread::sleep(Duration::from_millis(50)),
+                    Err(_) => break,
+                }
+            }
         }
         if let Some(handle) = self.reader_handle.take() {
             let _ = handle.join();

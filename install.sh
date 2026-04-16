@@ -1,76 +1,120 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+# install.sh — Installs the teasr binary from GitHub releases.
+#
+# Usage:
+#   curl -fsSL https://raw.githubusercontent.com/urmzd/teasr/main/install.sh | sh
+#
+# Environment variables:
+#   TEASR_VERSION     — version to install (e.g. "v1.0.0"); defaults to latest
+#   TEASR_INSTALL_DIR — installation directory; defaults to $HOME/.local/bin
+
+set -eu
 
 REPO="urmzd/teasr"
 
 # curl with optional auth — uses GH_TOKEN or GITHUB_TOKEN if set.
 gh_curl() {
-    local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+    token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
     if [ -n "$token" ]; then
         curl -fsSL -H "Authorization: token $token" "$@"
     else
         curl -fsSL "$@"
     fi
 }
-BINARY="teasr"
-INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
-
-# Detect platform
-detect_target() {
-  local os arch
-  os="$(uname -s)"
-  arch="$(uname -m)"
-
-  case "$os" in
-    Linux)
-      case "$arch" in
-        x86_64)  echo "x86_64-unknown-linux-gnu" ;;
-        aarch64) echo "aarch64-unknown-linux-gnu" ;;
-        *)       echo "Unsupported architecture: $arch" >&2; exit 1 ;;
-      esac
-      ;;
-    Darwin)
-      case "$arch" in
-        x86_64)  echo "x86_64-apple-darwin" ;;
-        arm64)   echo "aarch64-apple-darwin" ;;
-        *)       echo "Unsupported architecture: $arch" >&2; exit 1 ;;
-      esac
-      ;;
-    *)
-      echo "Unsupported OS: $os (use Windows releases from GitHub)" >&2
-      exit 1
-      ;;
-  esac
-}
-
-# Get latest release tag
-get_latest_version() {
-  gh_curl "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/'
-}
 
 main() {
-  local target version asset url
+    os=$(uname -s)
+    arch=$(uname -m)
 
-  target="$(detect_target)"
-  version="${1:-$(get_latest_version)}"
-  asset="teasr-${target}"
-  url="https://github.com/${REPO}/releases/download/${version}/${asset}"
+    case "$os" in
+        Linux)
+            case "$arch" in
+                x86_64)  target="x86_64-unknown-linux-musl" ;;
+                aarch64) target="aarch64-unknown-linux-musl" ;;
+                *)       err "Unsupported Linux architecture: $arch" ;;
+            esac
+            ;;
+        Darwin)
+            case "$arch" in
+                x86_64)  target="x86_64-apple-darwin" ;;
+                arm64)   target="aarch64-apple-darwin" ;;
+                *)       err "Unsupported macOS architecture: $arch" ;;
+            esac
+            ;;
+        MINGW*|MSYS*|CYGWIN*|Windows_NT)
+            err "Windows is not supported by this installer. Download a binary from https://github.com/$REPO/releases/latest"
+            ;;
+        *)
+            err "Unsupported operating system: $os"
+            ;;
+    esac
 
-  echo "Installing teasr ${version} for ${target}..."
+    if [ -n "${TEASR_VERSION:-}" ]; then
+        tag="$TEASR_VERSION"
+    else
+        tag=$(gh_curl "https://api.github.com/repos/$REPO/releases/latest" \
+            | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
+        if [ -z "$tag" ]; then
+            err "Failed to fetch latest release tag"
+        fi
+    fi
 
-  mkdir -p "$INSTALL_DIR"
-  gh_curl "$url" -o "$INSTALL_DIR/$BINARY"
-  chmod +x "$INSTALL_DIR/$BINARY"
+    artifact="teasr-${target}"
+    url="https://github.com/$REPO/releases/download/${tag}/${artifact}"
 
-  echo "teasr installed to $INSTALL_DIR/$BINARY"
+    install_dir="${TEASR_INSTALL_DIR:-$HOME/.local/bin}"
+    mkdir -p "$install_dir"
 
-  # Check if install dir is in PATH
-  case ":$PATH:" in
-    *":$INSTALL_DIR:"*) ;;
-    *) echo "Add $INSTALL_DIR to your PATH: export PATH=\"$INSTALL_DIR:\$PATH\"" ;;
-  esac
+    echo "Downloading teasr $tag for $target..."
+    gh_curl "$url" -o "$install_dir/teasr"
 
-  "$INSTALL_DIR/$BINARY" --version
+    chmod +x "$install_dir/teasr"
+
+    echo "Installed teasr to $install_dir/teasr"
+
+    case ":$PATH:" in
+        *":$install_dir:"*) ;;
+        *) add_to_path "$install_dir" ;;
+    esac
 }
 
-main "$@"
+add_to_path() {
+    install_dir="$1"
+
+    case "$(basename "$SHELL")" in
+        zsh)  profile="$HOME/.zshrc" ;;
+        bash)
+            if [ -f "$HOME/.bashrc" ]; then
+                profile="$HOME/.bashrc"
+            else
+                profile="$HOME/.profile"
+            fi
+            ;;
+        fish) profile="$HOME/.config/fish/config.fish" ;;
+        *)    profile="$HOME/.profile" ;;
+    esac
+
+    if [ "$(basename "$SHELL")" = "fish" ]; then
+        if ! grep -q "$install_dir" "$profile" 2>/dev/null; then
+            mkdir -p "$(dirname "$profile")"
+            echo "" >> "$profile"
+            echo "# Added by teasr installer" >> "$profile"
+            echo "set -Ux fish_user_paths $install_dir \$fish_user_paths" >> "$profile"
+            echo "Added $install_dir to $profile"
+            echo "Restart your shell or run: source $profile"
+        fi
+    elif [ -n "$profile" ] && ! grep -q "$install_dir" "$profile" 2>/dev/null; then
+        echo "" >> "$profile"
+        echo "# Added by teasr installer" >> "$profile"
+        echo "export PATH=\"$install_dir:\$PATH\"" >> "$profile"
+        echo "Added $install_dir to $profile"
+        echo "Restart your shell or run: source $profile"
+    fi
+}
+
+err() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+main

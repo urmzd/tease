@@ -52,7 +52,7 @@
 **Shell installer (recommended):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/urmzd/teasr/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/urmzd/teasr/main/install.sh | sh
 ```
 
 **Cargo:**
