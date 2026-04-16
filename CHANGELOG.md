@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.17.5 (2026-04-16)
+
+### Bug Fixes
+
+- **ci**: migrate sr v4 to v7 for artifact and input support (#13) ([3c2d074](https://github.com/urmzd/teasr/commit/3c2d074e50d0f80e65169df38c8875dfd13e8df2))
+
+### Refactoring
+
+- inline agentspec-update (#12) ([287ec40](https://github.com/urmzd/teasr/commit/287ec40172676da5cff9a7deda5b0e0a5628206e))
+
+### Misc
+
+- migrate sr config and action to v4 ([9b28391](https://github.com/urmzd/teasr/commit/9b28391c62892a4dd4e791fbdb5447fa6b232cb1))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.17.4...v0.17.5)
+
+
 ## 0.17.4 (2026-04-09)
 
 ### Bug Fixes
