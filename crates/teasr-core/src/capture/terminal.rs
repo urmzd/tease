@@ -37,6 +37,7 @@ impl TerminalBackend {
         title: Option<String>,
         frame_duration: u64,
         cwd: Option<String>,
+        command: Option<String>,
         font_family: Option<String>,
         font_size: Option<f64>,
     ) -> Self {
@@ -47,6 +48,7 @@ impl TerminalBackend {
             title,
             frame_duration,
             cwd,
+            command,
             font_family,
             font_size,
             writer: None,
@@ -126,34 +128,67 @@ impl CaptureBackend for TerminalBackend {
             })
             .context("failed to open PTY")?;
 
+        // Resolve the target working directory
+        let effective_cwd = {
+            let cwd = self.cwd.clone().unwrap_or_else(|| ".".to_string());
+            let p = std::path::Path::new(&cwd);
+            if p.is_relative() {
+                std::env::current_dir()
+                    .context("failed to get current dir")?
+                    .join(p)
+            } else {
+                p.to_path_buf()
+            }
+        };
+
         let shell = if cfg!(windows) {
             "cmd".to_string()
         } else {
             std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string())
         };
-        let mut cmd = CommandBuilder::new(&shell);
-        if !cfg!(windows) {
-            cmd.arg("-li");
-        }
 
-        // Point shell rc dirs to an empty temp dir so startup files don't pollute
-        // the recording, but keep the real HOME so tools find their auth/config.
         let rc_dir = tempfile::tempdir().context("failed to create temp rc dir")?;
         let rc_path = rc_dir.path().to_str().unwrap_or("/tmp");
-        cmd.env("ZDOTDIR", rc_path); // zsh reads rc from ZDOTDIR instead of HOME
-        cmd.env("BASH_ENV", "");
-        cmd.env("ENV", ""); // sh/dash
-        cmd.env("HISTFILE", "/dev/null");
-        cmd.env("TERM", "xterm-256color");
-        cmd.env("FORCE_COLOR", "1");
-        cmd.env("COLORTERM", "truecolor");
-        cmd.env("PS1", "$ ");
-        cmd.env("TERM_PROGRAM", "");
 
-        let child = pair
-            .slave
-            .spawn_command(cmd)
-            .context("failed to spawn shell")?;
+        let child = if let Some(ref command) = self.command {
+            // Direct spawn: shell only parses the command, exec replaces it
+            // so the process is directly trackable by PID.
+            let mut cmd = CommandBuilder::new(&shell);
+            cmd.arg("-c");
+            cmd.arg(format!("exec {command}"));
+            cmd.cwd(&effective_cwd);
+            cmd.env("TERM", "xterm-256color");
+            cmd.env("FORCE_COLOR", "1");
+            cmd.env("COLORTERM", "truecolor");
+            cmd.env("TERM_PROGRAM", "");
+            cmd.env("ZDOTDIR", rc_path);
+            cmd.env("BASH_ENV", "");
+            cmd.env("ENV", "");
+            cmd.env("HISTFILE", "/dev/null");
+
+            pair.slave
+                .spawn_command(cmd)
+                .context("failed to spawn command")?
+        } else {
+            // Interactive shell mode: spawn a login shell, cd into cwd
+            let mut cmd = CommandBuilder::new(&shell);
+            if !cfg!(windows) {
+                cmd.arg("-li");
+            }
+            cmd.env("ZDOTDIR", rc_path);
+            cmd.env("BASH_ENV", "");
+            cmd.env("ENV", "");
+            cmd.env("HISTFILE", "/dev/null");
+            cmd.env("TERM", "xterm-256color");
+            cmd.env("FORCE_COLOR", "1");
+            cmd.env("COLORTERM", "truecolor");
+            cmd.env("PS1", "$ ");
+            cmd.env("TERM_PROGRAM", "");
+
+            pair.slave
+                .spawn_command(cmd)
+                .context("failed to spawn shell")?
+        };
         drop(pair.slave);
 
         let writer = pair
@@ -190,50 +225,13 @@ impl CaptureBackend for TerminalBackend {
         self.reader_handle = Some(reader_handle);
         self.child = Some(child);
 
-        // Poll for shell prompt instead of sleeping a fixed duration
-        wait_for_buffer_match(
-            self.buffer.as_ref().unwrap(),
-            b"$ ",
-            Duration::from_millis(2000),
-        );
-
-        // Resolve the target working directory
-        let abs_cwd = {
-            let cwd = self.cwd.clone().unwrap_or_else(|| ".".to_string());
-            let p = std::path::Path::new(&cwd);
-            if p.is_relative() {
-                std::env::current_dir()
-                    .context("failed to get current dir")?
-                    .join(p)
-            } else {
-                p.to_path_buf()
-            }
-        };
-
-        // Use the working directory directly — the user controls the interactions,
-        // so there's no risk of unintended modifications.
-        let effective_cwd = abs_cwd;
-
-        // cd into the effective cwd and clear the screen
-        {
-            use std::io::Write;
-            let writer = self.writer.as_mut().unwrap();
-            writer
-                .write_all(
-                    format!(
-                        "cd {} && clear\n",
-                        shell_escape(&effective_cwd.to_string_lossy())
-                    )
-                    .as_bytes(),
-                )
-                .context("failed to cd into cwd")?;
-            // Poll for prompt after cd/clear instead of sleeping a fixed duration
-            wait_for_buffer_match(
+        if self.command.is_some() {
+            // Direct spawn: wait for initial output from the process
+            wait_for_buffer_activity(
                 self.buffer.as_ref().unwrap(),
-                b"$ ",
                 Duration::from_millis(2000),
             );
-            // Drain the buffer so the cd/clone doesn't appear in output
+            // Drain setup output so the first visible frame is clean
             if let Some(ref buffer) = self.buffer {
                 buffer.lock().unwrap().clear();
             }
@@ -243,6 +241,42 @@ impl CaptureBackend for TerminalBackend {
                 } else {
                     teasr_term_render::TerminalEmulator::new_unbounded(self.cols)
                 };
+            }
+        } else {
+            // Interactive shell: wait for prompt, cd, clear
+            wait_for_buffer_match(
+                self.buffer.as_ref().unwrap(),
+                b"$ ",
+                Duration::from_millis(2000),
+            );
+
+            {
+                use std::io::Write;
+                let writer = self.writer.as_mut().unwrap();
+                writer
+                    .write_all(
+                        format!(
+                            "cd {} && clear\n",
+                            shell_escape(&effective_cwd.to_string_lossy())
+                        )
+                        .as_bytes(),
+                    )
+                    .context("failed to cd into cwd")?;
+                wait_for_buffer_match(
+                    self.buffer.as_ref().unwrap(),
+                    b"$ ",
+                    Duration::from_millis(2000),
+                );
+                if let Some(ref buffer) = self.buffer {
+                    buffer.lock().unwrap().clear();
+                }
+                if let Some(ref mut emulator) = self.emulator {
+                    *emulator = if let Some(rows) = self.rows {
+                        teasr_term_render::TerminalEmulator::new(self.cols, rows)
+                    } else {
+                        teasr_term_render::TerminalEmulator::new_unbounded(self.cols)
+                    };
+                }
             }
         }
 
@@ -406,6 +440,34 @@ fn key_to_bytes(key: &str) -> Vec<u8> {
         "left" => vec![0x1b, b'[', b'D'],
         "space" => vec![b' '],
         _ => key.as_bytes().to_vec(),
+    }
+}
+
+/// Poll a shared buffer until any output arrives, then wait for it to settle.
+fn wait_for_buffer_activity(buffer: &Arc<Mutex<Vec<u8>>>, timeout: Duration) {
+    let deadline = Instant::now() + timeout;
+    // Wait for first output
+    loop {
+        thread::sleep(Duration::from_millis(10));
+        if !buffer.lock().unwrap().is_empty() {
+            break;
+        }
+        if Instant::now() >= deadline {
+            return;
+        }
+    }
+    // Wait for output to settle (no new data for 200ms)
+    let mut last_len = 0;
+    let mut idle_since = Instant::now();
+    while Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(50));
+        let current_len = buffer.lock().unwrap().len();
+        if current_len != last_len {
+            last_len = current_len;
+            idle_since = Instant::now();
+        } else if idle_since.elapsed() >= Duration::from_millis(200) {
+            return;
+        }
     }
 }
 

@@ -33,6 +33,7 @@ fn build_backend(
             rows,
             name,
             cwd,
+            command,
             font,
             frame_duration,
             ..
@@ -46,6 +47,7 @@ fn build_backend(
                     name.clone(),
                     frame_duration.unwrap_or(default_fd),
                     cwd.clone(),
+                    command.clone(),
                     Some(effective_font.family.clone()),
                     Some(effective_font.size),
                 ));
