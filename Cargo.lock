@@ -3293,6 +3293,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
+name = "streamsafe"
+version = "0.2.2"
+dependencies = [
+ "bytes",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "strict-num"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3397,7 +3408,7 @@ checksum = "df7f62577c25e07834649fc3b39fafdc597c0a3527dc1c60129201ccfcbaa50c"
 
 [[package]]
 name = "teasr"
-version = "0.17.6"
+version = "0.18.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -3413,7 +3424,7 @@ dependencies = [
 
 [[package]]
 name = "teasr-core"
-version = "0.17.6"
+version = "0.18.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3433,6 +3444,7 @@ dependencies = [
  "rgb",
  "serde",
  "serde_json",
+ "streamsafe",
  "teasr-term-render",
  "tempfile",
  "tokio",
@@ -3444,7 +3456,7 @@ dependencies = [
 
 [[package]]
 name = "teasr-term-render"
-version = "0.17.6"
+version = "0.18.0"
 dependencies = [
  "anstyle-parse 0.2.7",
  "anyhow",
@@ -3633,6 +3645,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
 dependencies = [
  "rustls",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-util"
+version = "0.7.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ae9cec805b01e8fc3fd2fe289f89149a9b66dd16786abd8b19cfa7b48cb0098"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "futures-sink",
+ "futures-util",
+ "pin-project-lite",
  "tokio",
 ]
 

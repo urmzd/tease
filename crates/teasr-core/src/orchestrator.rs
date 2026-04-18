@@ -9,8 +9,7 @@ use crate::capture;
 use crate::render;
 use crate::server::ManagedServer;
 use crate::types::{
-    CaptureResult, CapturedFrame, FontConfig, OutputFormat, ResolvedConfig, SceneConfig,
-    ViewportConfig,
+    CaptureResult, CapturedFrame, FontConfig, ResolvedConfig, SceneConfig, ViewportConfig,
 };
 use crate::ui;
 
@@ -346,7 +345,8 @@ async fn capture_scene(
     debug!("captured {} frames", frames.len());
 
     pb.set_message(format!("{scene_name}: encoding outputs"));
-    let files = write_outputs(&frames, &scene_name, formats, output_dir)?;
+    let files =
+        crate::pipeline::write_outputs(frames, &scene_name, formats, output_dir).await?;
 
     Ok(CaptureResult { scene_name, files })
 }
@@ -442,35 +442,3 @@ fn render_splash(
     }])
 }
 
-/// Write frames to disk in the requested formats.
-fn write_outputs(
-    frames: &[CapturedFrame],
-    scene_name: &str,
-    formats: &[OutputFormat],
-    output_dir: &Path,
-) -> Result<Vec<String>> {
-    let mut files = Vec::new();
-
-    for format in formats {
-        match format {
-            OutputFormat::Gif(gif_config) if !frames.is_empty() => {
-                let gif_path = output_dir.join(format!("{scene_name}.gif"));
-                crate::convert::gif::frames_to_gif(frames, &gif_path, gif_config)?;
-                files.push(gif_path.display().to_string());
-            }
-            OutputFormat::Png(_) if !frames.is_empty() => {
-                let png_path = output_dir.join(format!("{scene_name}.png"));
-                let last = frames.last().context("no frames to write")?;
-                std::fs::write(&png_path, &last.png_data)
-                    .with_context(|| format!("failed to write {}", png_path.display()))?;
-                files.push(png_path.display().to_string());
-            }
-            OutputFormat::Mp4(_) => {
-                ui::warn("MP4 output requires ffmpeg in PATH - skipping for now");
-            }
-            _ => {}
-        }
-    }
-
-    Ok(files)
-}
