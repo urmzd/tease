@@ -9,7 +9,7 @@ readme = "README.md"
 
 [dependencies]
 teasr-term-render.workspace = true
-streamsafe = { version = "0.2", path = "../../../streamsafe/crates/streamsafe", default-features = false }
+streamsafe = { version = "0.3", default-features = false }
 tokio.workspace = true
 serde.workspace = true
 serde_json = "1"

@@ -3294,7 +3294,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "streamsafe"
-version = "0.2.2"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "582d69acbe854325ea53a453dc203536b92523f0ae1e0cbbf1e35b9bfb887695"
 dependencies = [
  "bytes",
  "thiserror 2.0.18",
@@ -3408,7 +3410,7 @@ checksum = "df7f62577c25e07834649fc3b39fafdc597c0a3527dc1c60129201ccfcbaa50c"
 
 [[package]]
 name = "teasr"
-version = "0.18.0"
+version = "0.18.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -3424,7 +3426,7 @@ dependencies = [
 
 [[package]]
 name = "teasr-core"
-version = "0.18.0"
+version = "0.18.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3456,7 +3458,7 @@ dependencies = [
 
 [[package]]
 name = "teasr-term-render"
-version = "0.18.0"
+version = "0.18.1"
 dependencies = [
  "anstyle-parse 0.2.7",
  "anyhow",
