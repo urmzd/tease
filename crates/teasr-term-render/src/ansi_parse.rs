@@ -285,10 +285,8 @@ impl Perform for GridBuilder {
                     self.put_char(' ');
                 }
             }
-            0x08 => {
-                if self.cursor_col > 0 {
-                    self.cursor_col -= 1;
-                }
+            0x08 if self.cursor_col > 0 => {
+                self.cursor_col -= 1;
             }
             _ => {}
         }
