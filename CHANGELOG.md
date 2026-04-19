@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.19.1 (2026-04-19)
+
+### Bug Fixes
+
+- **ci**: drop removed sr action force input and stale flags ([59b60ea](https://github.com/urmzd/teasr/commit/59b60ea455add66fbabe9c50344f1a9c8401539b))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.19.0...v0.19.1)
+
+
 ## 0.19.0 (2026-04-19)
 
 ### Features
