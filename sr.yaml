@@ -64,6 +64,8 @@ packages:
       - Cargo.toml
     stage_files:
       - Cargo.lock
+    artifacts:
+      - release-assets/*
     hooks:
       post_release:
         - cargo publish -p teasr-core
