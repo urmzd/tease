@@ -14,6 +14,8 @@
 <p align="center">
   <a href="https://github.com/urmzd/teasr/actions/workflows/ci.yml"><img src="https://github.com/urmzd/teasr/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://crates.io/crates/teasr"><img src="https://img.shields.io/crates/v/teasr" alt="crates.io"></a>
+  &nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/urmzd/teasr" alt="License"></a>
 </p>
 
 ## Showcase
@@ -36,6 +38,20 @@
     <td align="center"><img src="showcase/markdown-demo.png" alt="Markdown rendered as styled HTML via headless Chrome" width="400"></td>
   </tr>
 </table>
+
+## Contents
+
+- [Why teasr](#why-teasr)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Capture Modes](#capture-modes)
+- [Configuration Reference](#configuration-reference)
+- [CLI Reference](#cli-reference)
+- [Output Formats](#output-formats)
+- [CI Integration](#ci-integration)
+- [Workspace](#workspace)
+- [Agent Skill](#agent-skill)
+- [License](#license)
 
 ## Why teasr
 
