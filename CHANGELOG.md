@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.19.2 (2026-04-19)
+
+### Bug Fixes
+
+- **ci**: install libwayland-dev in release job ([7fc2198](https://github.com/urmzd/teasr/commit/7fc2198a7c2d3cf270cfc2efa13b337806689c76))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.19.1...v0.19.2)
+
+
 ## 0.19.1 (2026-04-19)
 
 ### Bug Fixes
