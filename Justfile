@@ -2,7 +2,7 @@ default: check
 
 init:
     rustup component add clippy rustfmt
-    sr init --merge 2>/dev/null || sr init
+    sr init
 
 install:
     cargo install --path crates/teasr-cli
