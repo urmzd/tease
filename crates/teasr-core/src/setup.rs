@@ -70,7 +70,7 @@ fn dirs_path() -> Result<PathBuf> {
 
 /// Check if a font family is available on the system.
 pub fn check_font(family: &str) -> bool {
-    teasr_term_render::check_font_available(family)
+    crate::term_render::check_font_available(family)
 }
 
 /// Install a font by name from the registry.

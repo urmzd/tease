@@ -4,7 +4,6 @@ use std::time::{Duration, Instant};
 use tracing::{debug, info, warn};
 
 use crate::backend::CaptureBackend;
-use crate::capture::wait_for_idle;
 use crate::types::{CapturedFrame, Interaction, Region};
 
 pub struct ScreenBackend {
@@ -152,26 +151,13 @@ impl CaptureBackend for ScreenBackend {
                     duration_ms: self.frame_duration,
                 }])
             }
-            Interaction::Wait {
-                duration,
-                idle_timeout,
-            } => {
-                let poll_ms = self.frame_duration.max(100);
-                let mut last_pixels: Option<Vec<u8>> = None;
-                wait_for_idle(*duration, *idle_timeout, poll_ms, || {
-                    let pixels = self.capture_image().ok().map(|img| img.into_raw());
-                    let changed = match (&last_pixels, &pixels) {
-                        (Some(last), Some(curr)) => last != curr,
-                        (None, Some(_)) => true,
-                        _ => false,
-                    };
-                    if changed {
-                        last_pixels = pixels;
-                    }
-                    Box::pin(async move { changed })
-                })
-                .await;
-                Ok(vec![])
+            Interaction::Wait { duration } => {
+                tokio::time::sleep(Duration::from_millis(*duration)).await;
+                let png_data = self.capture_framed().await?;
+                Ok(vec![CapturedFrame {
+                    png_data,
+                    duration_ms: *duration,
+                }])
             }
             other => {
                 debug!(

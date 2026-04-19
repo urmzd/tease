@@ -10,8 +10,8 @@ family = "MonaspiceNe Nerd Font"
 # ── Web: screenshot this project's GitHub page ──
 [[scenes]]
 type = "web"
-url = "https://github.com/urmzd/teasr"
 name = "github"
+uri = "https://github.com/urmzd/teasr"
 viewport = { width = 1280, height = 800 }
 full_page = false
 formats = [{ output_type = "gif" }, { output_type = "png" }]
@@ -61,22 +61,22 @@ key = "enter"
 type = "wait"
 duration = 2000
 
-# ── File: local HTML rendered via headless Chrome ──
+# ── Web / local HTML rendered via headless Chrome ──
 [[scenes]]
-type = "file"
-path = "./showcase/file-demo.html"
+type = "web"
 name = "file-demo"
+uri = "./showcase/file-demo.html"
 viewport = { width = 800, height = 600 }
 formats = [{ output_type = "png" }]
 
 [[scenes.interactions]]
 type = "snapshot"
 
-# ── Markdown: self-contained demo rendered as styled HTML ──
+# ── Web / markdown auto-detected by extension ──
 [[scenes]]
-type = "markdown"
-path = "./showcase/markdown-demo.md"
+type = "web"
 name = "markdown-demo"
+uri = "./showcase/markdown-demo.md"
 theme = "light"
 viewport = { width = 800, height = 600 }
 formats = [{ output_type = "png" }]

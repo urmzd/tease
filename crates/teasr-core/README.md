@@ -63,7 +63,7 @@ pub struct ResolvedConfig {
 
 ### `SceneConfig`
 
-A tagged enum with variants `Web`, `Screen`, `Terminal`, and `File`. Mirrors the `[[scenes]]` TOML entries.
+A tagged enum with variants `Web`, `Screen`, and `Terminal`. Mirrors the `[[scenes]]` TOML entries. The `Web` variant uses a single `uri` field that auto-detects remote URLs, local files, and Markdown documents.
 
 ### `ServerConfig`
 
@@ -120,19 +120,15 @@ Runs all scenes in declaration order:
 
 ### Web (`capture::web`)
 
-Uses chromiumoxide (Chrome DevTools Protocol) to navigate, execute actions (click, scroll, hover, wait), and take screenshots. Requires Chrome or Chromium on `PATH` or at a standard install location.
+Uses chromiumoxide (Chrome DevTools Protocol) to navigate, execute actions (click, scroll, hover, wait), and take screenshots. A single `uri` is classified by the orchestrator: `http(s)://` URLs go direct, `.md`/`.markdown` files are rendered via `render::markdown::render_to_html` into a temp file, and anything else is loaded via `file://` (with PDF page selection applied to the URL fragment). Requires Chrome or Chromium on `PATH` or at a standard install location.
 
 ### Terminal (`capture::terminal`)
 
-Runs the command in a PTY via portable-pty, collects ANSI output, and delegates to `teasr-term-render` to produce a styled PNG.
+Runs the command in a PTY via portable-pty, collects ANSI output, and delegates to the `term_render` module to produce a styled PNG.
 
 ### Screen (`capture::screen`)
 
 Captures a display or region using xcap. Supports display index selection and pixel-precise region cropping.
-
-### File (`capture::file`)
-
-Renders a local file (HTML, SVG, PDF, etc.) in headless Chrome and captures a screenshot. No dev server required.
 
 ## GIF Conversion (`convert::gif`)
 

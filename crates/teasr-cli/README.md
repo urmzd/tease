@@ -24,7 +24,7 @@ cargo install teasr
 teasr [COMMAND]
 
 Commands:
-  showme  Run capture scenes from teasr.toml
+  run     Run capture scenes from teasr.toml (alias: `showme`)
   help    Print this message or the help of the given subcommand(s)
 
 Options:
@@ -32,10 +32,10 @@ Options:
   -V, --version  Print version
 ```
 
-### `teasr showme`
+### `teasr run`
 
 ```
-teasr showme [OPTIONS]
+teasr run [OPTIONS]
 
 Options:
   -c, --config <PATH>      Path to teasr.toml (default: auto-discover from cwd)

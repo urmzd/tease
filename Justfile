@@ -26,12 +26,8 @@ check-fmt:
     cargo fmt --all -- --check
 
 publish:
-    cargo publish -p teasr-term-render --dry-run
     cargo publish -p teasr-core --dry-run
     cargo publish -p teasr-cli --dry-run
-
-record: install
-    PATH="$(pwd)/target/release:$PATH" teasr showme
 
 check: check-fmt lint test
 

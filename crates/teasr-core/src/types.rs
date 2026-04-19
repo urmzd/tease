@@ -81,11 +81,7 @@ fn default_mp4_fps() -> u32 {
 }
 
 fn default_wait() -> u64 {
-    30000
-}
-
-fn default_idle_timeout() -> u64 {
-    500
+    1000
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -107,15 +103,14 @@ pub enum Interaction {
     ScrollTo {
         selector: Option<String>,
     },
+    /// Pause for the given number of milliseconds. Backends that produce
+    /// frames (terminal, screen) emit one frame at the end of the pause with
+    /// `duration_ms = duration`, preserving the pause visually in animated
+    /// output. Chrome-based scenes emit no frames — use `snapshot` after a
+    /// `wait` if you want to capture post-pause state.
     Wait {
-        /// Maximum time to wait in ms (default: 30000). Acts as a timeout —
-        /// the wait exits early once terminal output has settled.
         #[serde(default = "default_wait")]
         duration: u64,
-        /// Exit early if no new output arrives for this many ms (default: 500).
-        /// Set to 0 to disable idle detection and always wait the full duration.
-        #[serde(default = "default_idle_timeout")]
-        idle_timeout: u64,
     },
     Snapshot {
         name: Option<String>,
@@ -166,8 +161,12 @@ pub struct Region {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SceneConfig {
+    /// Capture HTML content in headless Chrome. `uri` selects what to load:
+    /// - `http://` / `https://` — remote URL (or `/path` joined to `[server]`)
+    /// - `*.md` / `*.markdown` — Markdown file, rendered to styled HTML
+    /// - anything else — local file (HTML, SVG, PDF)
     Web {
-        url: String,
+        uri: String,
         name: Option<String>,
         viewport: Option<ViewportConfig>,
         formats: Option<Vec<OutputFormat>>,
@@ -175,7 +174,20 @@ pub enum SceneConfig {
         interactions: Vec<InteractionStep>,
         frame_duration: Option<u64>,
         #[serde(default)]
-        full_page: Option<bool>,
+        full_page: bool,
+        /// PDF page number, 1-indexed. Only applies when `uri` points to a PDF.
+        #[serde(default = "default_page")]
+        page: u32,
+        /// Markdown parsing flavor. Only applies when `uri` is a Markdown file.
+        #[serde(default)]
+        flavor: MarkdownFlavor,
+        /// Markdown color theme. Only applies when `uri` is a Markdown file.
+        #[serde(default = "default_markdown_theme")]
+        theme: MarkdownTheme,
+        /// Path to a custom CSS file (Markdown only).
+        stylesheet: Option<String>,
+        /// Path to a full HTML template with `{{content}}` placeholder (Markdown only).
+        template: Option<String>,
     },
     Screen {
         name: Option<String>,
@@ -209,40 +221,6 @@ pub enum SceneConfig {
         #[serde(default)]
         interactions: Vec<InteractionStep>,
         frame_duration: Option<u64>,
-    },
-    /// Capture a local file (HTML, PDF, SVG, etc.) rendered in a headless browser.
-    File {
-        path: String,
-        name: Option<String>,
-        viewport: Option<ViewportConfig>,
-        formats: Option<Vec<OutputFormat>>,
-        /// Page number to capture (1-indexed, default: 1). Only applies to PDFs.
-        #[serde(default = "default_page")]
-        page: u32,
-        frame_duration: Option<u64>,
-    },
-    /// Render a Markdown file as a styled HTML page and capture it.
-    Markdown {
-        path: String,
-        name: Option<String>,
-        viewport: Option<ViewportConfig>,
-        formats: Option<Vec<OutputFormat>>,
-        /// Markdown parsing flavor: github (default), commonmark, or custom.
-        #[serde(default)]
-        flavor: MarkdownFlavor,
-        /// Color theme: "light" (default) or "dark".
-        #[serde(default = "default_markdown_theme")]
-        theme: MarkdownTheme,
-        /// Path to a custom CSS file applied after the default styles.
-        stylesheet: Option<String>,
-        /// Path to a full HTML template with `{{content}}` placeholder.
-        template: Option<String>,
-        /// Capture the full rendered page instead of just the viewport.
-        #[serde(default)]
-        full_page: bool,
-        frame_duration: Option<u64>,
-        #[serde(default)]
-        interactions: Vec<InteractionStep>,
     },
 }
 
@@ -310,11 +288,9 @@ fn default_true() -> bool {
 impl SceneConfig {
     pub fn name(&self) -> &str {
         match self {
-            SceneConfig::Web { name, url, .. } => name.as_deref().unwrap_or(url.as_str()),
+            SceneConfig::Web { name, uri, .. } => name.as_deref().unwrap_or(uri.as_str()),
             SceneConfig::Screen { name, .. } => name.as_deref().unwrap_or("screen"),
             SceneConfig::Terminal { name, .. } => name.as_deref().unwrap_or("recording"),
-            SceneConfig::File { name, path, .. } => name.as_deref().unwrap_or(path.as_str()),
-            SceneConfig::Markdown { name, path, .. } => name.as_deref().unwrap_or(path.as_str()),
         }
     }
 
@@ -323,8 +299,6 @@ impl SceneConfig {
             SceneConfig::Web { formats, .. } => formats,
             SceneConfig::Screen { formats, .. } => formats,
             SceneConfig::Terminal { formats, .. } => formats,
-            SceneConfig::File { formats, .. } => formats,
-            SceneConfig::Markdown { formats, .. } => formats,
         }
     }
 
@@ -333,8 +307,6 @@ impl SceneConfig {
             SceneConfig::Web { .. } => "web",
             SceneConfig::Screen { .. } => "screen",
             SceneConfig::Terminal { .. } => "terminal",
-            SceneConfig::File { .. } => "file",
-            SceneConfig::Markdown { .. } => "markdown",
         }
     }
 
@@ -343,8 +315,6 @@ impl SceneConfig {
             SceneConfig::Web { interactions, .. } => interactions,
             SceneConfig::Screen { interactions, .. } => interactions,
             SceneConfig::Terminal { interactions, .. } => interactions,
-            SceneConfig::File { .. } => &[],
-            SceneConfig::Markdown { interactions, .. } => interactions,
         }
     }
 }

@@ -12,7 +12,7 @@ inputs:
   scenes:
     description: "Comma-separated scene names to capture (default: all)"
   args:
-    description: "Additional arguments passed to `teasr showme`"
+    description: "Additional arguments passed to `teasr run`"
   install-chrome:
     description: "Whether to install Chrome (set to 'false' if already available)"
     default: "true"
@@ -101,7 +101,7 @@ runs:
         INPUT_ARGS: ${{ inputs.args }}
       run: |
         echo "::group::Run teasr"
-        args=(showme)
+        args=(run)
 
         if [ -n "$INPUT_CONFIG" ]; then
           args+=(--config "$INPUT_CONFIG")

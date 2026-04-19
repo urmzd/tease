@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/teasr-term-render",
     "crates/teasr-core",
     "crates/teasr-cli",
 ]
@@ -13,7 +12,6 @@ license = "Apache-2.0"
 repository = "https://github.com/urmzd/teasr"
 
 [workspace.dependencies]
-teasr-term-render = { path = "crates/teasr-term-render", version = "0.18.1" }
 teasr-core = { path = "crates/teasr-core", version = "0.18.1" }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }

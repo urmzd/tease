@@ -59,9 +59,13 @@ channels:
 packages:
   - path: .
     version_files:
-      - crates/teasr-term-render/Cargo.toml
       - crates/teasr-core/Cargo.toml
       - crates/teasr-cli/Cargo.toml
       - Cargo.toml
     stage_files:
       - Cargo.lock
+    hooks:
+      post_release:
+        - cargo publish -p teasr-core
+        - sleep 30
+        - cargo publish -p teasr

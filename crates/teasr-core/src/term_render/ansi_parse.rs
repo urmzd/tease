@@ -1,7 +1,7 @@
 /// ANSI escape sequence parser that builds a cell grid from raw terminal output.
 use anstyle_parse::{Params, Parser, Perform, Utf8Parser as CharAcc};
 
-use crate::themes::Theme;
+use super::themes::Theme;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cell {
@@ -285,10 +285,8 @@ impl Perform for GridBuilder {
                     self.put_char(' ');
                 }
             }
-            0x08 => {
-                if self.cursor_col > 0 {
-                    self.cursor_col -= 1;
-                }
+            0x08 if self.cursor_col > 0 => {
+                self.cursor_col -= 1;
             }
             _ => {}
         }

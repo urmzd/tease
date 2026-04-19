@@ -80,7 +80,7 @@ formats = [{ output_type = "png" }]
 
 [[scenes]]
 type = "web"
-url = "/"
+uri = "/"
 name = "home"
 
 [[scenes]]

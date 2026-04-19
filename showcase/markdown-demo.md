@@ -15,9 +15,9 @@ Render any `.md` file as a styled screenshot — no dev server, no external tool
 
 ```toml
 [[scenes]]
-type = "markdown"
-path = "./README.md"
+type = "web"
+uri = "./README.md"
 theme = "light"
 ```
 
-> **Tip:** Markdown scenes use the same interaction system as all other capture types — add `wait` and `snapshot` steps to capture multiple states.
+> **Tip:** Any `.md` file passed to a `web` scene is auto-detected and rendered with the bundled GitHub-style template — add `wait` and `snapshot` steps to capture multiple states.

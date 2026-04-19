@@ -9,8 +9,8 @@ use crate::capture;
 use crate::render;
 use crate::server::ManagedServer;
 use crate::types::{
-    CaptureResult, CapturedFrame, FontConfig, OutputFormat, ResolvedConfig, SceneConfig,
-    ViewportConfig,
+    CaptureResult, CapturedFrame, FontConfig, MarkdownFlavor, MarkdownTheme, ResolvedConfig,
+    SceneConfig, ViewportConfig,
 };
 use crate::ui;
 
@@ -54,29 +54,35 @@ fn build_backend(
             (backend, None)
         }
         SceneConfig::Web {
-            url,
+            uri,
             viewport,
             frame_duration,
             full_page,
+            page,
+            flavor,
+            theme,
+            stylesheet,
+            template,
             ..
         } => {
             let vp = viewport.as_ref().unwrap_or(global_viewport).clone();
-            let full_url = if let Some(srv) = server {
-                if url.starts_with('/') {
-                    format!("{}{}", srv.url.trim_end_matches('/'), url)
-                } else {
-                    url.clone()
-                }
-            } else {
-                url.clone()
-            };
+            let (resolved_url, tmp_file) = resolve_web_uri(
+                uri,
+                *page,
+                flavor,
+                theme,
+                stylesheet.as_deref(),
+                template.as_deref(),
+                server,
+                vp.width,
+            )?;
             let backend: Box<dyn CaptureBackend> = Box::new(capture::web::WebBackend::new(
-                full_url,
+                resolved_url,
                 vp,
                 frame_duration.unwrap_or(default_fd),
-                full_page.unwrap_or(false),
+                *full_page,
             ));
-            (backend, None)
+            (backend, tmp_file)
         }
         SceneConfig::Screen {
             display,
@@ -101,54 +107,93 @@ fn build_backend(
             ));
             (backend, None)
         }
-        SceneConfig::File {
-            path,
-            viewport,
-            frame_duration,
-            page,
-            ..
-        } => {
-            let vp = viewport.as_ref().unwrap_or(global_viewport).clone();
-            let backend: Box<dyn CaptureBackend> = Box::new(capture::file::FileBackend::new(
-                path,
-                vp,
-                frame_duration.unwrap_or(default_fd),
-                *page,
-                false,
-            ));
-            (backend, None)
-        }
-        SceneConfig::Markdown {
-            path,
-            viewport,
-            frame_duration,
-            flavor,
-            theme,
-            stylesheet,
-            template,
-            full_page,
-            ..
-        } => {
-            let vp = viewport.as_ref().unwrap_or(global_viewport).clone();
-            let tmp = render::markdown::render_to_html(
-                Path::new(path),
-                flavor,
-                theme,
-                stylesheet.as_deref().map(Path::new),
-                template.as_deref().map(Path::new),
-                vp.width,
-            )?;
-            let backend: Box<dyn CaptureBackend> = Box::new(capture::file::FileBackend::new(
-                tmp.path(),
-                vp,
-                frame_duration.unwrap_or(default_fd),
-                1,
-                *full_page,
-            ));
-            (backend, Some(tmp))
-        }
     };
     Ok(result)
+}
+
+/// Classify a `uri` into one of: remote URL, local file, or Markdown source.
+///
+/// Detection rules, checked in order:
+/// 1. `http://` / `https://` → remote URL
+/// 2. Starts with `/` and a server is configured → server-relative URL
+/// 3. `.md` / `.markdown` extension → Markdown (rendered inline)
+/// 4. Otherwise → local file (HTML, PDF, SVG, ...)
+///
+/// Explicit `file://` prefixes are stripped before path handling.
+enum UriKind {
+    RemoteUrl(String),
+    LocalFile(PathBuf),
+    Markdown(PathBuf),
+}
+
+fn classify_uri(uri: &str, server: Option<&crate::types::ServerConfig>) -> UriKind {
+    if uri.starts_with("http://") || uri.starts_with("https://") {
+        return UriKind::RemoteUrl(uri.to_string());
+    }
+    if uri.starts_with('/') {
+        if let Some(srv) = server {
+            return UriKind::RemoteUrl(format!("{}{}", srv.url.trim_end_matches('/'), uri));
+        }
+    }
+    let trimmed = uri.strip_prefix("file://").unwrap_or(uri);
+    let path = PathBuf::from(trimmed);
+    let ext = path
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    match ext.as_str() {
+        "md" | "markdown" => UriKind::Markdown(path),
+        _ => UriKind::LocalFile(path),
+    }
+}
+
+/// Resolve a scene `uri` (plus PDF/Markdown options) into a concrete URL
+/// that headless Chrome can load. When the URI is a Markdown file, it is
+/// rendered to a temp HTML file; the returned `NamedTempFile` must outlive
+/// the capture.
+#[allow(clippy::too_many_arguments)]
+fn resolve_web_uri(
+    uri: &str,
+    page: u32,
+    flavor: &MarkdownFlavor,
+    theme: &MarkdownTheme,
+    stylesheet: Option<&str>,
+    template: Option<&str>,
+    server: Option<&crate::types::ServerConfig>,
+    viewport_width: u32,
+) -> Result<(String, Option<NamedTempFile>)> {
+    match classify_uri(uri, server) {
+        UriKind::RemoteUrl(url) => Ok((url, None)),
+        UriKind::LocalFile(path) => {
+            let abs = std::fs::canonicalize(&path)
+                .with_context(|| format!("file not found: {}", path.display()))?;
+            let is_pdf = abs
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("pdf"));
+            let mut url = format!("file://{}", abs.display());
+            if is_pdf {
+                if page > 1 {
+                    url.push_str(&format!("#page={page}&toolbar=0&navpanes=0&scrollbar=0"));
+                } else {
+                    url.push_str("#toolbar=0&navpanes=0&scrollbar=0");
+                }
+            }
+            Ok((url, None))
+        }
+        UriKind::Markdown(path) => {
+            let tmp = render::markdown::render_to_html(
+                &path,
+                flavor,
+                theme,
+                stylesheet.map(Path::new),
+                template.map(Path::new),
+                viewport_width,
+            )?;
+            let url = format!("file://{}", tmp.path().display());
+            Ok((url, Some(tmp)))
+        }
+    }
 }
 
 /// Run all scenes in order and return capture results.
@@ -159,7 +204,7 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
 
     // Load custom font if configured
     if let Some(ref path) = config.font.path {
-        teasr_term_render::load_extra_font(std::path::Path::new(path))?;
+        crate::term_render::load_extra_font(std::path::Path::new(path))?;
     }
     // Also load per-scene custom fonts
     for scene in &config.scenes {
@@ -168,7 +213,7 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
         } = scene
         {
             if let Some(ref path) = f.path {
-                teasr_term_render::load_extra_font(std::path::Path::new(path))?;
+                crate::term_render::load_extra_font(std::path::Path::new(path))?;
             }
         }
     }
@@ -346,7 +391,7 @@ async fn capture_scene(
     debug!("captured {} frames", frames.len());
 
     pb.set_message(format!("{scene_name}: encoding outputs"));
-    let files = write_outputs(&frames, &scene_name, formats, output_dir)?;
+    let files = crate::pipeline::write_outputs(frames, &scene_name, formats, output_dir).await?;
 
     Ok(CaptureResult { scene_name, files })
 }
@@ -361,7 +406,7 @@ fn interaction_label(interaction: &crate::types::Interaction) -> String {
             format!("typing \"{preview}{suffix}\"")
         }
         Interaction::Key { key } => format!("pressing {key}"),
-        Interaction::Wait { duration, .. } => format!("waiting {duration}ms"),
+        Interaction::Wait { duration } => format!("waiting {duration}ms"),
         Interaction::Click { selector, .. } => {
             format!("clicking {}", selector.as_deref().unwrap_or("page"))
         }
@@ -388,7 +433,7 @@ fn render_splash(
     theme: &str,
     font: &FontConfig,
 ) -> Result<Vec<CapturedFrame>> {
-    let opts = teasr_term_render::RenderOptions {
+    let opts = crate::term_render::RenderOptions {
         theme_name: theme,
         title: None,
         font_family: Some(&font.family),
@@ -396,13 +441,13 @@ fn render_splash(
     };
 
     let v_align = match splash.vertical_align {
-        crate::types::VerticalAlign::Top => teasr_term_render::splash::VAlign::Top,
-        crate::types::VerticalAlign::Center => teasr_term_render::splash::VAlign::Center,
-        crate::types::VerticalAlign::Bottom => teasr_term_render::splash::VAlign::Bottom,
+        crate::types::VerticalAlign::Top => crate::term_render::splash::VAlign::Top,
+        crate::types::VerticalAlign::Center => crate::term_render::splash::VAlign::Center,
+        crate::types::VerticalAlign::Bottom => crate::term_render::splash::VAlign::Bottom,
     };
 
     let png_data = if let Some(ref text) = splash.text {
-        teasr_term_render::splash::render_text_splash(
+        crate::term_render::splash::render_text_splash(
             text,
             cols,
             rows,
@@ -413,7 +458,7 @@ fn render_splash(
     } else if let Some(ref file) = splash.file {
         let content =
             std::fs::read(file).with_context(|| format!("failed to read splash file: {file}"))?;
-        teasr_term_render::splash::render_ansi_splash(
+        crate::term_render::splash::render_ansi_splash(
             &content,
             cols,
             rows,
@@ -424,7 +469,7 @@ fn render_splash(
     } else if let Some(ref image) = splash.image {
         let data = std::fs::read(image)
             .with_context(|| format!("failed to read splash image: {image}"))?;
-        teasr_term_render::splash::render_image_splash(
+        crate::term_render::splash::render_image_splash(
             &data,
             cols,
             rows,
@@ -440,37 +485,4 @@ fn render_splash(
         png_data,
         duration_ms: splash.duration,
     }])
-}
-
-/// Write frames to disk in the requested formats.
-fn write_outputs(
-    frames: &[CapturedFrame],
-    scene_name: &str,
-    formats: &[OutputFormat],
-    output_dir: &Path,
-) -> Result<Vec<String>> {
-    let mut files = Vec::new();
-
-    for format in formats {
-        match format {
-            OutputFormat::Gif(gif_config) if !frames.is_empty() => {
-                let gif_path = output_dir.join(format!("{scene_name}.gif"));
-                crate::convert::gif::frames_to_gif(frames, &gif_path, gif_config)?;
-                files.push(gif_path.display().to_string());
-            }
-            OutputFormat::Png(_) if !frames.is_empty() => {
-                let png_path = output_dir.join(format!("{scene_name}.png"));
-                let last = frames.last().context("no frames to write")?;
-                std::fs::write(&png_path, &last.png_data)
-                    .with_context(|| format!("failed to write {}", png_path.display()))?;
-                files.push(png_path.display().to_string());
-            }
-            OutputFormat::Mp4(_) => {
-                ui::warn("MP4 output requires ffmpeg in PATH - skipping for now");
-            }
-            _ => {}
-        }
-    }
-
-    Ok(files)
 }

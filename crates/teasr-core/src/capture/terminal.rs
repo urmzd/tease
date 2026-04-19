@@ -21,10 +21,10 @@ pub struct TerminalBackend {
     font_size: Option<f64>,
     writer: Option<Box<dyn std::io::Write + Send>>,
     buffer: Option<Arc<Mutex<Vec<u8>>>>,
-    emulator: Option<teasr_term_render::TerminalEmulator>,
+    emulator: Option<crate::term_render::TerminalEmulator>,
     reader_handle: Option<JoinHandle<()>>,
     child: Option<Box<dyn portable_pty::Child + Send>>,
-    last_grid: Option<teasr_term_render::CellGrid>,
+    last_grid: Option<crate::term_render::CellGrid>,
     last_png: Option<Vec<u8>>,
 }
 
@@ -84,7 +84,7 @@ impl TerminalBackend {
             let start = grid.rows.len() - viewport_rows;
             grid.rows = grid.rows.split_off(start);
         } else {
-            let empty_row = vec![teasr_term_render::Cell::default(); cols];
+            let empty_row = vec![crate::term_render::Cell::default(); cols];
             while grid.rows.len() < viewport_rows {
                 grid.rows.push(empty_row.clone());
             }
@@ -97,13 +97,13 @@ impl TerminalBackend {
             }
         }
 
-        let opts = teasr_term_render::RenderOptions {
+        let opts = crate::term_render::RenderOptions {
             theme_name: &self.theme,
             title: self.title.as_deref(),
             font_family: self.font_family.as_deref(),
             font_size: self.font_size,
         };
-        let png = teasr_term_render::render_grid_to_png(&grid, &opts)?;
+        let png = crate::term_render::render_grid_to_png(&grid, &opts)?;
         self.last_grid = Some(grid);
         self.last_png = Some(png.clone());
         Ok(png)
@@ -218,9 +218,9 @@ impl CaptureBackend for TerminalBackend {
         self.writer = Some(writer);
         self.buffer = Some(buffer);
         self.emulator = Some(if let Some(rows) = self.rows {
-            teasr_term_render::TerminalEmulator::new(self.cols, rows)
+            crate::term_render::TerminalEmulator::new(self.cols, rows)
         } else {
-            teasr_term_render::TerminalEmulator::new_unbounded(self.cols)
+            crate::term_render::TerminalEmulator::new_unbounded(self.cols)
         });
         self.reader_handle = Some(reader_handle);
         self.child = Some(child);
@@ -229,10 +229,7 @@ impl CaptureBackend for TerminalBackend {
             // Direct spawn: wait for the process to produce initial output
             // so the first snapshot captures the rendered UI. Do NOT drain
             // the buffer — for TUI apps the initial output IS the content.
-            wait_for_buffer_activity(
-                self.buffer.as_ref().unwrap(),
-                Duration::from_millis(2000),
-            );
+            wait_for_buffer_activity(self.buffer.as_ref().unwrap(), Duration::from_millis(2000));
         } else {
             // Interactive shell: wait for prompt, cd, clear
             wait_for_buffer_match(
@@ -263,9 +260,9 @@ impl CaptureBackend for TerminalBackend {
                 }
                 if let Some(ref mut emulator) = self.emulator {
                     *emulator = if let Some(rows) = self.rows {
-                        teasr_term_render::TerminalEmulator::new(self.cols, rows)
+                        crate::term_render::TerminalEmulator::new(self.cols, rows)
                     } else {
-                        teasr_term_render::TerminalEmulator::new_unbounded(self.cols)
+                        crate::term_render::TerminalEmulator::new_unbounded(self.cols)
                     };
                 }
             }
@@ -312,50 +309,12 @@ impl CaptureBackend for TerminalBackend {
                     duration_ms: self.frame_duration,
                 }])
             }
-            Interaction::Wait {
-                duration,
-                idle_timeout,
-            } => {
-                let interval = self.frame_duration.max(50);
-                let steps = (*duration / interval).max(1);
-                let step_ms = *duration / steps;
-                let mut frames = Vec::new();
-                let mut idle_ms: u64 = 0;
-                let idle_limit = if *idle_timeout == 0 {
-                    u64::MAX
-                } else {
-                    *idle_timeout
-                };
-
-                for _ in 0..steps {
-                    thread::sleep(Duration::from_millis(step_ms));
-
-                    // Check if new data arrived before draining
-                    let has_new_data = self
-                        .buffer
-                        .as_ref()
-                        .map_or(false, |b| !b.lock().unwrap().is_empty());
-
-                    if has_new_data {
-                        idle_ms = 0;
-                    } else {
-                        idle_ms += step_ms;
-                    }
-
-                    frames.push(CapturedFrame {
-                        png_data: self.drain_and_snapshot()?,
-                        duration_ms: step_ms,
-                    });
-
-                    if idle_ms >= idle_limit {
-                        debug!(
-                            "idle timeout reached ({}ms idle), ending wait early",
-                            idle_ms
-                        );
-                        break;
-                    }
-                }
-                Ok(frames)
+            Interaction::Wait { duration } => {
+                thread::sleep(Duration::from_millis(*duration));
+                Ok(vec![CapturedFrame {
+                    png_data: self.drain_and_snapshot()?,
+                    duration_ms: *duration,
+                }])
             }
             Interaction::Snapshot { .. } => Ok(vec![CapturedFrame {
                 png_data: self.drain_and_snapshot()?,

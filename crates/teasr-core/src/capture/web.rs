@@ -32,6 +32,13 @@ impl WebBackend {
             page: None,
         }
     }
+
+    fn is_pdf_url(&self) -> bool {
+        self.url
+            .split(['?', '#'])
+            .next()
+            .is_some_and(|base| base.to_ascii_lowercase().ends_with(".pdf"))
+    }
 }
 
 #[async_trait::async_trait]
@@ -41,7 +48,10 @@ impl CaptureBackend for WebBackend {
     }
 
     async fn setup(&mut self) -> Result<()> {
-        let opts = LaunchOptions::new(self.viewport.width, self.viewport.height);
+        let mut opts = LaunchOptions::new(self.viewport.width, self.viewport.height);
+        if self.is_pdf_url() {
+            opts = opts.arg("--disable-extensions").arg("--disable-plugins");
+        }
         let browser = browser::launch(opts).await?;
         let page = browser.new_page("about:blank").await?;
 
@@ -89,12 +99,8 @@ impl CaptureBackend for WebBackend {
                 }
                 Ok(vec![])
             }
-            Interaction::Wait {
-                duration,
-                idle_timeout,
-            } => {
-                install_idle_tracker(&**page).await;
-                wait_for_idle(*duration, *idle_timeout, 50, || page_has_activity(&**page)).await;
+            Interaction::Wait { duration } => {
+                tokio::time::sleep(Duration::from_millis(*duration)).await;
                 Ok(vec![])
             }
             Interaction::Snapshot { .. } => {
