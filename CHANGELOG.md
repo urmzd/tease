@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.19.0 (2026-04-19)
+
+### Features
+
+- **core**: route multi-format output through streamsafe (#15) ([dd7b1ae](https://github.com/urmzd/teasr/commit/dd7b1aee4684b1fda9ddad4877374cf8158cb787))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.18.1...v0.19.0)
+
+
 ## 0.18.1 (2026-04-16)
 
 ### Bug Fixes
