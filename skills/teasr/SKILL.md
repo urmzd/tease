@@ -38,7 +38,7 @@ Capture screenshots and GIFs from web apps, terminals, and screens.
    duration = 2000
    ```
 
-2. Run: `teasr showme $ARGUMENTS`
+2. Run: `teasr run $ARGUMENTS`
 
 3. Output files are written to the configured output directory.
 
@@ -70,14 +70,26 @@ duration = 2000
 ```
 
 ### Web
-Navigates to a URL via Chrome DevTools Protocol. Requires Chrome/Chromium.
+Loads a remote URL, local file (HTML/SVG/PDF), or Markdown file via Chrome DevTools Protocol. Requires Chrome/Chromium. Type is auto-detected from `uri`.
 
 ```toml
+# Remote URL (or /path if [server] is configured)
 [[scenes]]
 type = "web"
-url = "/dashboard"
+uri = "/dashboard"
 name = "dashboard"
 viewport = { width = 1440, height = 900 }
+
+# Local HTML
+[[scenes]]
+type = "web"
+uri = "./docs/preview.html"
+
+# Markdown (auto-detected by .md extension)
+[[scenes]]
+type = "web"
+uri = "./README.md"
+theme = "dark"
 ```
 
 ### Screen

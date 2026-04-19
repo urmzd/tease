@@ -1,6 +1,6 @@
 # teasr
 
-> Automated project showcase capture — screenshots and GIFs from web apps, desktop, and terminal. Single binary, no runtime dependencies. Configured via TOML, supports Chrome DevTools Protocol for web capture, PTY-based terminal capture with ANSI-to-PNG rendering, and native screen capture. Encodes GIFs with gifski (pure Rust). Ships as a CLI and a GitHub Action.
+> Automated project showcase capture — screenshots and GIFs from web apps, desktop, and terminal. Single binary, no runtime dependencies. Configured via TOML, supports Chrome DevTools Protocol for web capture (remote URLs, local HTML/PDF/SVG, and Markdown rendered to HTML), PTY-based terminal capture with ANSI-to-PNG rendering, and native screen capture. Encodes GIFs with gifski (pure Rust). Ships as a CLI and a GitHub Action.
 
 ## Docs
 
@@ -16,7 +16,7 @@
 - [crates/teasr-core/src/capture/web.rs](https://github.com/urmzd/teasr/blob/main/crates/teasr-core/src/capture/web.rs): Chrome DevTools Protocol capture
 - [crates/teasr-core/src/capture/terminal.rs](https://github.com/urmzd/teasr/blob/main/crates/teasr-core/src/capture/terminal.rs): PTY-based terminal capture
 - [crates/teasr-core/src/capture/screen.rs](https://github.com/urmzd/teasr/blob/main/crates/teasr-core/src/capture/screen.rs): Native screen capture (xcap)
-- [crates/teasr-term-render/src/lib.rs](https://github.com/urmzd/teasr/blob/main/crates/teasr-term-render/src/lib.rs): ANSI to SVG to PNG rendering pipeline
+- [crates/teasr-core/src/term_render/mod.rs](https://github.com/urmzd/teasr/blob/main/crates/teasr-core/src/term_render/mod.rs): ANSI to SVG to PNG rendering pipeline
 
 ## Optional
 

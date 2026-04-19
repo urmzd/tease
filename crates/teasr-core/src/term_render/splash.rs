@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use image::GenericImageView;
 
-use crate::ansi_parse::{Cell, CellColor, CellGrid, TerminalEmulator};
-use crate::RenderOptions;
+use super::ansi_parse::{Cell, CellColor, CellGrid, TerminalEmulator};
+use super::RenderOptions;
 
 /// Vertical alignment for splash content.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -25,7 +25,7 @@ pub fn render_text_splash(
     opts: &RenderOptions,
 ) -> Result<Vec<u8>> {
     let grid = text_to_grid(text, cols, rows, center, v_align);
-    crate::render_grid_to_png(&grid, opts)
+    super::render_grid_to_png(&grid, opts)
 }
 
 /// Render an ANSI file (.ans/.txt) splash screen to PNG bytes.
@@ -44,7 +44,7 @@ pub fn render_ansi_splash(
     let grid = emu.snapshot();
 
     if v_align == VAlign::Top {
-        return crate::render_grid_to_png(&grid, opts);
+        return super::render_grid_to_png(&grid, opts);
     }
 
     // Find used rows for vertical positioning
@@ -64,7 +64,7 @@ pub fn render_ansi_splash(
     };
 
     if v_offset == 0 {
-        return crate::render_grid_to_png(&grid, opts);
+        return super::render_grid_to_png(&grid, opts);
     }
 
     let mut padded = CellGrid {
@@ -81,7 +81,7 @@ pub fn render_ansi_splash(
     while padded.rows.len() < rows {
         padded.rows.push(empty_row.clone());
     }
-    crate::render_grid_to_png(&padded, opts)
+    super::render_grid_to_png(&padded, opts)
 }
 
 /// Render an image splash screen to PNG bytes.
@@ -100,7 +100,7 @@ pub fn render_image_splash(
         cols,
         rows: vec![vec![Cell::default(); cols]; rows],
     };
-    let bg_png = crate::render_grid_to_png(&empty_grid, opts)?;
+    let bg_png = super::render_grid_to_png(&empty_grid, opts)?;
 
     // Load both images
     let bg_img = image::load_from_memory(&bg_png).context("failed to decode background PNG")?;

@@ -1,7 +1,7 @@
 /// ANSI escape sequence parser that builds a cell grid from raw terminal output.
 use anstyle_parse::{Params, Parser, Perform, Utf8Parser as CharAcc};
 
-use crate::themes::Theme;
+use super::themes::Theme;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cell {

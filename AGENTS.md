@@ -2,15 +2,14 @@
 
 ## Project Overview
 
-**teasr** is a Rust CLI tool that automatically captures screenshots and GIFs from web apps, desktop environments, and terminal output. It's a single-binary tool configured via TOML, built as a Cargo workspace with three crates.
+**teasr** is a Rust CLI tool that automatically captures screenshots and GIFs from web apps, desktop environments, and terminal output. It's a single-binary tool configured via TOML, built as a Cargo workspace with two crates.
 
 ### Workspace Structure
 
 ```
 crates/
-  teasr-cli/        # Binary crate — CLI entry point (clap)
-  teasr-core/       # Library crate — orchestration, config, capture, conversion
-  teasr-term-render/ # Library crate — ANSI→SVG→PNG terminal rendering
+  teasr-cli/   # Binary crate — CLI entry point (clap)
+  teasr-core/  # Library crate — orchestration, config, capture, conversion, and ANSI→SVG→PNG terminal rendering (term_render module)
 ```
 
 ### Key Modules (teasr-core)
@@ -19,10 +18,9 @@ crates/
 - `config.rs` — TOML parsing and config file auto-discovery
 - `types.rs` — all domain types (SceneConfig, OutputFormat, ViewportConfig, etc.)
 - `server.rs` — RAII managed dev server with process group cleanup
-- `capture/web.rs` — Chrome DevTools Protocol via chromiumoxide
+- `capture/web.rs` — Chrome DevTools Protocol via chromiumoxide; handles remote URLs, local files, and Markdown (rendered to HTML in `render/markdown.rs`)
 - `capture/terminal.rs` — PTY-based capture via portable-pty
 - `capture/screen.rs` — native screenshot via xcap
-- `capture/file.rs` — local file rendering via headless Chrome
 - `convert/gif.rs` — PNG→GIF via gifski
 
 ## Setup Commands
@@ -42,7 +40,6 @@ crates/
 ## Testing
 
 - Run all tests: `cargo test --workspace`
-- Snapshot tests (teasr-term-render): uses `insta` — run `cargo insta review` to update snapshots
 - Linting: `cargo clippy --workspace -- -D warnings`
 
 All tests and clippy must pass before merging. CI enforces this.

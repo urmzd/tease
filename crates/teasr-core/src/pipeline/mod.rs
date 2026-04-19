@@ -201,9 +201,14 @@ mod tests {
 
     #[tokio::test]
     async fn no_formats_returns_empty() {
-        let files = write_outputs(vec![frame(b"x", 10)], "scene", &[], std::path::Path::new("/tmp"))
-            .await
-            .unwrap();
+        let files = write_outputs(
+            vec![frame(b"x", 10)],
+            "scene",
+            &[],
+            std::path::Path::new("/tmp"),
+        )
+        .await
+        .unwrap();
         assert!(files.is_empty());
     }
 

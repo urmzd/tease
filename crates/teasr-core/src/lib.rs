@@ -9,5 +9,6 @@ pub mod pipeline;
 pub mod render;
 pub mod server;
 pub mod setup;
+pub mod term_render;
 pub mod types;
 pub mod ui;

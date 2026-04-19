@@ -41,7 +41,7 @@ jobs:
           teasr setup --fonts "Monaspace Nerd Font"
 
       - name: Dogfood
-        run: xvfb-run --auto-servernum --server-args "-screen 0 1280x720x24" teasr showme --scenes web,terminal --verbose --timeout 60000
+        run: xvfb-run --auto-servernum --server-args "-screen 0 1280x720x24" teasr run --scenes web,terminal --verbose --timeout 60000
 
       - name: Upload showcase
         uses: actions/upload-artifact@v4

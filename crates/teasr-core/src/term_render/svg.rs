@@ -1,6 +1,6 @@
 /// SVG builder that renders a cell grid into an SVG string with terminal chrome.
-use crate::ansi_parse::{Cell, CellGrid};
-use crate::themes::Theme;
+use super::ansi_parse::{Cell, CellGrid};
+use super::themes::Theme;
 
 const CELL_WIDTH: f64 = 9.6;
 const CELL_HEIGHT: f64 = 20.0;
@@ -236,9 +236,9 @@ fn escape_xml(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use super::super::ansi_parse::parse;
+    use super::super::themes::DRACULA;
     use super::*;
-    use crate::ansi_parse::parse;
-    use crate::themes::DRACULA;
 
     #[test]
     fn renders_valid_svg() {

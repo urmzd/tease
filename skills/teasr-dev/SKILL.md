@@ -2,17 +2,17 @@
 name: teasr-dev
 description: >
   Development skill for the teasr Rust workspace — a CLI tool that captures screenshots and GIFs
-  from web apps, terminals, and screens. Use this skill when working on any of the three workspace
-  crates (teasr-cli, teasr-core, teasr-term-render), adding capture backends, modifying the config
-  system, debugging build issues, or extending output formats. Trigger whenever the user mentions
-  teasr, screenshot capture, terminal rendering, ANSI parsing, or the workspace crates by name.
+  from web apps, terminals, and screens. Use this skill when working on either workspace crate
+  (teasr-cli, teasr-core), adding capture backends, modifying the config system, debugging build
+  issues, or extending output formats. Trigger whenever the user mentions teasr, screenshot capture,
+  terminal rendering, ANSI parsing, or the workspace crates by name.
 ---
 
 # teasr Development Guide
 
 ## Architecture at a Glance
 
-teasr is a Cargo workspace with three crates that form a pipeline:
+teasr is a Cargo workspace with two crates that form a pipeline:
 
 ```
 teasr-cli (binary)
@@ -24,13 +24,13 @@ teasr-cli (binary)
        │    ├─ web.rs       → Chrome DevTools Protocol (chromiumoxide)
        │    ├─ terminal.rs  → PTY capture (portable-pty)
        │    └─ screen.rs    → native screenshot (xcap)
-       └─ convert/
-            └─ gif.rs       → PNG→GIF (gifski)
-  └─ teasr-term-render (library)
-       ├─ ansi_parse.rs → ANSI escape sequence → cell grid
-       ├─ svg.rs        → cell grid → SVG with terminal chrome
-       ├─ rasterize.rs  → SVG → PNG (resvg + tiny-skia)
-       └─ themes.rs     → Dracula, Monokai color themes
+       ├─ convert/
+       │    └─ gif.rs       → PNG→GIF (gifski)
+       └─ term_render/
+            ├─ ansi_parse.rs → ANSI escape sequence → cell grid
+            ├─ svg.rs        → cell grid → SVG with terminal chrome
+            ├─ rasterize.rs  → SVG → PNG (resvg + tiny-skia)
+            └─ themes.rs     → Dracula, Monokai color themes
 ```
 
 ## Build & Test Commands
@@ -47,9 +47,6 @@ cargo clippy --workspace -- -D warnings
 
 # Run the CLI locally
 cargo run -p teasr-cli -- [--verbose] [--formats png,gif] [-o ./out]
-
-# Update snapshot tests (teasr-term-render)
-cargo insta review
 ```
 
 ## Key Patterns

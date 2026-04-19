@@ -37,7 +37,8 @@ async fn run_terminal_scene(text: &str) -> BenchResult {
     let cpu_start = cpu_time();
     let wall_start = Instant::now();
 
-    let mut backend = TerminalBackend::new(80, Some(24), "dracula", None, 42, None, None, None);
+    let mut backend =
+        TerminalBackend::new(80, Some(24), "dracula", None, 42, None, None, None, None);
     backend.setup().await.expect("setup failed");
 
     let mut frames: Vec<CapturedFrame> = Vec::new();
@@ -61,12 +62,9 @@ async fn run_terminal_scene(text: &str) -> BenchResult {
         .expect("key failed");
     frames.extend(key_frames);
 
-    // Wait for output (idle_timeout = 500ms default)
+    // Pause to capture command output
     let wait_frames = backend
-        .execute(&Interaction::Wait {
-            duration: 10000,
-            idle_timeout: 500,
-        })
+        .execute(&Interaction::Wait { duration: 2000 })
         .await
         .expect("wait failed");
     frames.extend(wait_frames);

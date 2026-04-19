@@ -25,15 +25,12 @@ pub enum FormatSink {
 impl FormatSink {
     /// Build a sink for a configured output format. Returns `None` for formats
     /// teasr cannot emit via the pipeline (currently MP4).
-    pub fn for_format(
-        format: &OutputFormat,
-        scene_name: &str,
-        output_dir: &Path,
-    ) -> Option<Self> {
+    pub fn for_format(format: &OutputFormat, scene_name: &str, output_dir: &Path) -> Option<Self> {
         match format {
-            OutputFormat::Gif(cfg) => {
-                Some(gif_sink(output_dir.join(format!("{scene_name}.gif")), cfg.clone()))
-            }
+            OutputFormat::Gif(cfg) => Some(gif_sink(
+                output_dir.join(format!("{scene_name}.gif")),
+                cfg.clone(),
+            )),
             OutputFormat::Png(_) => Some(png_sink(output_dir.join(format!("{scene_name}.png")))),
             OutputFormat::Mp4(_) => {
                 tracing::warn!("MP4 output requires ffmpeg in PATH — skipping");

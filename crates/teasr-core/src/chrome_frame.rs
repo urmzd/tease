@@ -8,7 +8,7 @@ use crate::capture::wait_for_idle;
 
 /// Render a PNG image inside macOS-style window chrome using a headless browser.
 ///
-/// Visual constants match `teasr-term-render/src/svg.rs` and `themes.rs`:
+/// Visual constants match `term_render/svg.rs` and `term_render/themes.rs`:
 /// chrome height 40px, corner radius 10px, padding 16px, Dracula theme by default.
 pub async fn render_with_chrome_frame(
     png_data: &[u8],

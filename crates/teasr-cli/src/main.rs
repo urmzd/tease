@@ -32,7 +32,8 @@ enum Command {
     /// Print the current version
     Version,
     /// Run capture scenes from teasr.toml
-    Showme {
+    #[command(alias = "showme")]
+    Run {
         /// Path to config file (default: search for teasr.toml)
         #[arg(short, long)]
         config: Option<PathBuf>,
@@ -111,7 +112,7 @@ async fn main() -> Result<()> {
             }
             Ok(())
         }
-        Some(Command::Showme {
+        Some(Command::Run {
             config,
             output,
             formats,
@@ -131,7 +132,7 @@ async fn main() -> Result<()> {
                 .with_target(false)
                 .init();
 
-            teasr_core::ui::header("teasr showme");
+            teasr_core::ui::header("teasr run");
 
             let timeout_dur = std::time::Duration::from_millis(timeout);
             let result = tokio::time::timeout(

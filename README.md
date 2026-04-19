@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">teasr</h1>
   <p align="center">
-    Automated project showcase capture — screenshots and GIFs from web apps, desktop, terminal, and markdown. Single binary, no runtime dependencies.
+    Automated project showcase capture — screenshots and GIFs from web apps, desktop, and terminal. Single binary, no runtime dependencies.
     <br /><br />
     <a href="https://github.com/urmzd/teasr/releases">Download</a>
     &middot;
@@ -28,8 +28,8 @@
     <td align="center"><img src="showcase/cli-help.gif" alt="Terminal capture of CLI help" width="400"></td>
   </tr>
   <tr>
-    <td align="center"><strong>File Capture</strong></td>
-    <td align="center"><strong>Markdown Capture</strong></td>
+    <td align="center"><strong>Local HTML</strong></td>
+    <td align="center"><strong>Markdown</strong></td>
   </tr>
   <tr>
     <td align="center"><img src="showcase/file-demo.png" alt="Local HTML file rendered via headless Chrome" width="400"></td>
@@ -79,7 +79,7 @@ formats = [{ output_type = "png" }]
 
 [[scenes]]
 type = "web"
-url = "/"
+uri = "/"
 name = "homepage"
 formats = [{ output_type = "gif" }, { output_type = "png" }]
 
@@ -118,14 +118,14 @@ duration = 2000
 Then run:
 
 ```bash
-teasr showme
+teasr run
 ```
 
 Output files are written to `./showcase/`.
 
 ## Capture Modes
 
-All five capture modes use a unified `[[scenes.interactions]]` syntax. Every interaction type is accepted by every mode — unsupported interactions are silently skipped (visible with `--verbose`).
+All three capture modes — `terminal`, `web`, `screen` — use a unified `[[scenes.interactions]]` syntax. Every interaction type is accepted by every mode; unsupported interactions are silently skipped (visible with `--verbose`). The `web` scene loads remote URLs, local files (HTML/SVG/PDF), or Markdown files through the same headless-Chrome renderer.
 
 ### Interaction Types
 
@@ -136,7 +136,7 @@ All five capture modes use a unified `[[scenes.interactions]]` syntax. Every int
 | `click` | `selector` (CSS selector, optional) | Click an element |
 | `hover` | `selector` (CSS selector, optional) | Hover over an element |
 | `scroll-to` | `selector` (CSS selector, optional) | Scroll an element into view |
-| `wait` | `duration` (ms, default 1000) | Pause before next interaction |
+| `wait` | `duration` (ms, default 1000) | Pause. Terminal/screen emit one frame at the end of the pause (`duration_ms = duration`); web emits nothing — follow with `snapshot` to capture post-pause state. |
 | `snapshot` | `name` (optional) | Capture the current state as a frame |
 
 Every interaction also accepts a `hidden` flag (default `false`). Hidden interactions execute normally but their frames are excluded from output — useful for setup steps (e.g. typing a command) that should not appear in the final GIF or screenshot.
@@ -160,15 +160,20 @@ hidden = true
 
 ### Web
 
-Navigates to a URL via Chrome DevTools Protocol (chromiumoxide). Requires Chrome or Chromium to be installed.
+Loads a URI in headless Chrome (via chromiumoxide). The `uri` field picks what to load:
+
+- `http://` / `https://` — remote URL (a leading `/` joins against `[server].url` if configured)
+- `*.md` / `*.markdown` — Markdown file rendered to styled HTML
+- anything else — local file (HTML, SVG, PDF) loaded via `file://`
+
+Requires Chrome or Chromium to be installed.
 
 ```toml
+# Remote URL (or server-relative path with [server])
 [[scenes]]
 type = "web"
-url = "/dashboard"
+uri = "/dashboard"
 name = "dashboard"
-
-# Optional
 viewport = { width = 1440, height = 900 }
 formats = [{ output_type = "png" }, { output_type = "gif" }]
 
@@ -179,19 +184,61 @@ selector = "#open-modal"
 [[scenes.interactions]]
 type = "snapshot"
 name = "modal-open"
+
+# Local HTML / SVG
+[[scenes]]
+type = "web"
+uri = "./docs/preview.html"
+name = "docs-preview"
+
+[[scenes.interactions]]
+type = "snapshot"
+
+# PDF (page selection via the `page` field)
+[[scenes]]
+type = "web"
+uri = "./spec.pdf"
+page = 2
+
+[[scenes.interactions]]
+type = "snapshot"
+
+# Markdown (rendered with the bundled GitHub-style template)
+[[scenes]]
+type = "web"
+uri = "./README.md"
+theme = "dark"           # "light" (default) or "dark"
+flavor = "github"        # "github" (default), "commonmark", or "custom"
+full_page = true
+
+[[scenes.interactions]]
+type = "snapshot"
 ```
 
 **Web scene fields:**
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `url` | string | required | Path (joined to `server.url`) or full URL |
-| `name` | string | url value | Output filename base |
+| `uri` | string | required | Remote URL, server-relative path, local file, or Markdown file |
+| `name` | string | uri value | Output filename base |
 | `viewport` | object | `1280x720` | `{ width, height }` |
-| `formats` | array | `output.formats` | Per-scene format override (`[{ output_type = "png" }]`) |
+| `formats` | array | `output.formats` | Per-scene format override |
 | `interactions` | array | `[]` | Sequence of interactions |
-| `full_page` | boolean | — | Capture full page height or just viewport |
+| `full_page` | boolean | `false` | Capture full page height instead of just the viewport |
 | `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
+| `page` | integer | `1` | PDF page to capture (only applies when `uri` is a PDF) |
+| `theme` | string | `"light"` | Markdown theme: `"light"` or `"dark"` (Markdown only) |
+| `flavor` | string | `"github"` | Markdown flavor: `"github"`, `"commonmark"`, `"custom"` (Markdown only) |
+| `stylesheet` | string | — | Path to a custom CSS file appended after the default styles (Markdown only) |
+| `template` | string | — | Path to a full HTML template with `{{content}}` placeholder; overrides the default template (Markdown only) |
+
+**Markdown flavor details:**
+
+| Flavor | Behavior |
+|--------|----------|
+| `github` | GitHub Flavored Markdown — tables, task lists, autolinks, strikethrough, footnotes |
+| `commonmark` | Strict CommonMark — no extensions |
+| `custom` | GFM extensions enabled; pair with `stylesheet` to apply your own visual style |
 
 **Supported interactions:** `click`, `hover`, `scroll-to`, `wait`, `snapshot`, `type`, `key`
 
@@ -280,102 +327,6 @@ type = "snapshot"
 
 **Supported interactions:** `snapshot`, `wait`
 
-### File
-
-Renders a local file (HTML, SVG, PDF, etc.) in headless Chrome and captures a screenshot — no dev server required. Useful for generating showcase images from static assets, documentation pages, or design mockups that already exist in your repo.
-
-```toml
-[[scenes]]
-type = "file"
-path = "./docs/preview.html"
-name = "docs-preview"
-
-# Optional
-viewport = { width = 800, height = 600 }
-page = 1  # PDF page number (1-indexed)
-formats = [{ output_type = "png" }]
-
-[[scenes.interactions]]
-type = "snapshot"
-```
-
-**File scene fields:**
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `path` | string | required | Relative or absolute path to the file |
-| `name` | string | filename stem | Output filename base |
-| `viewport` | object | `1280x720` | `{ width, height }` |
-| `page` | integer | `1` | PDF page to capture (1-indexed) |
-| `formats` | array | `output.formats` | Per-scene format override |
-| `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
-
-**Supported interactions:** `snapshot`, `wait`
-
-### Markdown
-
-Renders a `.md` file as a styled HTML page in headless Chrome and captures a screenshot or GIF — no dev server or external tooling required. Markdown is converted to HTML using [comrak](https://github.com/nickel-lang/comrak), wrapped in a GitHub-style template, and delegated to the same Chrome-based capture used by `file` scenes. Useful for showcasing README files, changelogs, and documentation pages.
-
-```toml
-# GitHub-flavored markdown, light theme (defaults)
-[[scenes]]
-type = "markdown"
-path = "./README.md"
-name = "readme"
-
-# Dark theme
-[[scenes]]
-type = "markdown"
-path = "./README.md"
-theme = "dark"
-
-# Strict CommonMark
-[[scenes]]
-type = "markdown"
-path = "./SPEC.md"
-flavor = "commonmark"
-
-# Custom stylesheet, full-page capture
-[[scenes]]
-type = "markdown"
-path = "./docs/guide.md"
-flavor = "custom"
-stylesheet = "./docs/custom.css"
-full_page = true
-
-# Full template control
-[[scenes]]
-type = "markdown"
-path = "./docs/guide.md"
-template = "./docs/template.html"
-```
-
-**Markdown scene fields:**
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `path` | string | required | Relative or absolute path to the `.md` file |
-| `name` | string | filename stem | Output filename base |
-| `viewport` | object | `1280x720` | `{ width, height }` |
-| `flavor` | string | `"github"` | Markdown parsing flavor: `"github"`, `"commonmark"`, or `"custom"` |
-| `theme` | string | `"light"` | Color theme: `"light"` (GitHub light) or `"dark"` (GitHub dark) |
-| `stylesheet` | string | — | Path to a custom CSS file appended after default styles |
-| `template` | string | — | Path to a full HTML template with a `{{content}}` placeholder; overrides the default template entirely |
-| `full_page` | boolean | `false` | Capture the full rendered page height instead of just the viewport |
-| `formats` | array | `output.formats` | Per-scene format override |
-| `frame_duration` | integer | `100` | Milliseconds per frame in GIF output |
-| `interactions` | array | `[]` | Sequence of interactions |
-
-**Markdown flavor details:**
-
-| Flavor | Behavior |
-|--------|----------|
-| `github` | GitHub Flavored Markdown — tables, task lists, autolinks, strikethrough, footnotes |
-| `commonmark` | Strict CommonMark — no extensions |
-| `custom` | GFM extensions enabled; pair with `stylesheet` to apply your own visual style |
-
-**Supported interactions:** `snapshot`, `wait`
-
 ## Configuration Reference
 
 ### `[server]`
@@ -399,7 +350,7 @@ formats = [{ output_type = "png" }]  # default: [{ output_type = "png" }]. Optio
 
 ### `[[scenes]]`
 
-Each `[[scenes]]` entry is one of the five types described above. The `type` field is required and must be `"web"`, `"terminal"`, `"screen"`, `"file"`, or `"markdown"`.
+Each `[[scenes]]` entry is one of the three types described above. The `type` field is required and must be `"web"`, `"terminal"`, or `"screen"`.
 
 Config file discovery walks up from the current directory to the filesystem root, so running `teasr` from any subdirectory of your project will find `teasr.toml` at the root.
 
@@ -409,7 +360,7 @@ Config file discovery walks up from the current directory to the filesystem root
 teasr [COMMAND]
 
 Commands:
-  showme  Run capture scenes from teasr.toml
+  run     Run capture scenes from teasr.toml (alias: `showme`)
   help    Print this message or the help of the given subcommand(s)
 
 Options:
@@ -417,10 +368,10 @@ Options:
   -V, --version  Print version
 ```
 
-### `teasr showme`
+### `teasr run`
 
 ```
-teasr showme [OPTIONS]
+teasr run [OPTIONS]
 
 Options:
   -c, --config <PATH>      Path to teasr.toml (default: auto-discover)
@@ -446,7 +397,7 @@ Options:
 
 ## CI Integration
 
-The GitHub Action downloads the appropriate pre-built binary from releases, installs Chrome, and runs `teasr showme`. All configuration comes from `teasr.toml`.
+The GitHub Action downloads the appropriate pre-built binary from releases, installs Chrome, and runs `teasr run`. All configuration comes from `teasr.toml`.
 
 ```yaml
 - uses: urmzd/teasr@v1
@@ -456,20 +407,19 @@ The GitHub Action downloads the appropriate pre-built binary from releases, inst
     install-chrome: "true"   # optional, set "false" if Chrome is already available
     install-fonts: ""        # optional, space-separated font families
     config: ""               # optional, path to teasr.toml
-    args: ""                 # optional, extra flags for `teasr showme`
+    args: ""                 # optional, extra flags for `teasr run`
 ```
 
 **Supported runners:** `ubuntu-*`, `macos-*`, `windows-*` on x64 and ARM64.
 
 ## Workspace
 
-teasr is a Cargo workspace with three crates:
+teasr is a Cargo workspace with two crates:
 
 | Crate | Description |
 |-------|-------------|
 | [`teasr-cli`](crates/teasr-cli) | CLI entry point (`teasr` binary) |
-| [`teasr-core`](crates/teasr-core) | Capture, config, and orchestration library |
-| [`teasr-term-render`](crates/teasr-term-render) | ANSI → SVG → PNG rendering library |
+| [`teasr-core`](crates/teasr-core) | Capture, config, orchestration, and ANSI → SVG → PNG terminal rendering |
 
 ## Agent Skill
 
