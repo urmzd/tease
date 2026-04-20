@@ -1,4 +1,4 @@
-# sr v7 configuration
+# sr configuration
 # Reference: https://github.com/urmzd/sr#configuration
 
 git:
@@ -65,9 +65,12 @@ packages:
     stage_files:
       - Cargo.lock
     artifacts:
-      - release-assets/*
-    hooks:
-      post_release:
-        - cargo publish -p teasr-core
-        - sleep 30
-        - cargo publish -p teasr
+      - release-assets/teasr-x86_64-unknown-linux-gnu
+      - release-assets/teasr-aarch64-unknown-linux-gnu
+      - release-assets/teasr-x86_64-apple-darwin
+      - release-assets/teasr-aarch64-apple-darwin
+      - release-assets/teasr-x86_64-pc-windows-msvc.exe
+      - release-assets/teasr-aarch64-pc-windows-msvc.exe
+    publish:
+      type: cargo
+      workspace: true
