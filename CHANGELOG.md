@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.20.0 (2026-04-26)
+
+### Features
+
+- **core**: humanize typing, hold final frame, fix gif trailing duration ([af2014e](https://github.com/urmzd/teasr/commit/af2014ee1e34f9f8fe751b9adc992b9b045c4f93))
+
+### Misc
+
+- **ci**: bump sr to v8, typed cargo workspace publisher, literal artifact paths ([fead1cb](https://github.com/urmzd/teasr/commit/fead1cb596b96debf6850754e1ca1c260d2c96dc))
+- **ci**: drop force input, move artifacts into sr.yaml ([1d3b0cf](https://github.com/urmzd/teasr/commit/1d3b0cf4d6e2b7a0d6a9b66c0fdfa60543475a13))
+- **community**: add GitHub community-health files ([2d291c7](https://github.com/urmzd/teasr/commit/2d291c739d788c8e3b7d03c61b566673600c2fa4))
+- **fix**: standardize README format ([14ff0a5](https://github.com/urmzd/teasr/commit/14ff0a5f16a1749706f4007b84e7288f8ff457f3))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.19.2...v0.20.0)
+
+
 ## 0.19.2 (2026-04-19)
 
 ### Bug Fixes
