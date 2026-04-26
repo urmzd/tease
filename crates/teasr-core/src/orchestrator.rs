@@ -246,6 +246,7 @@ pub async fn run(config: &ResolvedConfig) -> Result<Vec<CaptureResult>> {
             &output_dir,
             config.frame_duration_ms,
             config.scene_timeout,
+            config.outro_hold_ms,
             &config.font,
             &pb,
         )
@@ -292,6 +293,7 @@ async fn capture_scene(
     output_dir: &Path,
     global_frame_duration_ms: u64,
     seconds: f64,
+    outro_hold_ms: u64,
     global_font: &FontConfig,
     pb: &indicatif::ProgressBar,
 ) -> Result<CaptureResult> {
@@ -381,12 +383,20 @@ async fn capture_scene(
     };
 
     let timeout = std::time::Duration::from_secs_f64(seconds);
-    let frames = match tokio::time::timeout(timeout, capture_fut).await {
+    let mut frames = match tokio::time::timeout(timeout, capture_fut).await {
         Ok(result) => result?,
         Err(_) => anyhow::bail!("scene '{}' timed out after {:.1}s", scene_name, seconds),
     };
 
     backend.teardown().await?;
+
+    if outro_hold_ms > 0 {
+        if let Some(last) = frames.last_mut() {
+            if last.duration_ms < outro_hold_ms {
+                last.duration_ms = outro_hold_ms;
+            }
+        }
+    }
 
     debug!("captured {} frames", frames.len());
 

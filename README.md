@@ -364,6 +364,18 @@ dir = "./showcase"       # default: "./teasr-output"
 formats = [{ output_type = "png" }]  # default: [{ output_type = "png" }]. Options: "png", "gif", "mp4"
 ```
 
+### Top-level keys
+
+```toml
+fps = 24                 # default: 24. Frames per second (sets default frame_duration = 1000/fps).
+seconds = 2.5            # default: 2.5. Target output duration in seconds.
+scene_timeout = 60       # default: 60. Per-scene wall-clock timeout in seconds.
+outro_hold_ms = 1500     # default: 1500. Minimum hold time for the final frame of every scene
+                         # before the GIF loops, so viewers can read the result. Set to 0 to disable.
+```
+
+The default `type` interaction speed is `80 ms` per character with ±20 % jitter, which reads as fast human typing rather than a uniform stream. Override per interaction with `speed = <ms>` for a fixed cadence.
+
 ### `[[scenes]]`
 
 Each `[[scenes]]` entry is one of the three types described above. The `type` field is required and must be `"web"`, `"terminal"`, or `"screen"`.

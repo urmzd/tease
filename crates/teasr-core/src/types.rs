@@ -373,6 +373,9 @@ pub struct TeaseConfig {
     pub seconds: Option<f64>,
     /// Per-scene wall-clock timeout in seconds.
     pub scene_timeout: Option<f64>,
+    /// Minimum hold time (ms) for the final frame of every scene before the
+    /// GIF loops, so viewers can read the result. Set to 0 to disable.
+    pub outro_hold_ms: Option<u64>,
 }
 
 /// Fully resolved config with defaults applied.
@@ -389,6 +392,8 @@ pub struct ResolvedConfig {
     pub seconds: f64,
     /// Per-scene wall-clock timeout in seconds (default: 60s).
     pub scene_timeout: f64,
+    /// Minimum hold time (ms) for the final frame of every scene (default: 1500).
+    pub outro_hold_ms: u64,
 }
 
 impl TeaseConfig {
@@ -402,6 +407,7 @@ impl TeaseConfig {
             frame_duration_ms: 1000 / self.fps.unwrap_or(24).max(1) as u64,
             seconds: self.seconds.unwrap_or(2.5),
             scene_timeout: self.scene_timeout.unwrap_or(60.0),
+            outro_hold_ms: self.outro_hold_ms.unwrap_or(1500),
         }
     }
 }

@@ -277,7 +277,7 @@ impl CaptureBackend for TerminalBackend {
     async fn execute(&mut self, interaction: &Interaction) -> Result<Vec<CapturedFrame>> {
         match interaction {
             Interaction::Type { text, speed } => {
-                let char_delay = Duration::from_millis(speed.unwrap_or(50));
+                let base_ms = speed.unwrap_or(super::DEFAULT_TYPE_SPEED_MS);
                 let mut frames = Vec::new();
                 for ch in text.chars() {
                     let mut bytes = [0u8; 4];
@@ -287,7 +287,7 @@ impl CaptureBackend for TerminalBackend {
                         .unwrap()
                         .write_all(s.as_bytes())
                         .context("failed to write to PTY")?;
-                    thread::sleep(char_delay);
+                    thread::sleep(super::humanized_keystroke_delay(base_ms));
                     thread::sleep(Duration::from_millis(10));
                     frames.push(CapturedFrame {
                         png_data: self.drain_and_snapshot()?,

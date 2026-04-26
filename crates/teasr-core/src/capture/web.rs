@@ -111,13 +111,13 @@ impl CaptureBackend for WebBackend {
                 }])
             }
             Interaction::Type { text, speed } => {
-                let delay = speed.unwrap_or(50);
+                let base_ms = speed.unwrap_or(super::DEFAULT_TYPE_SPEED_MS);
                 for ch in text.chars() {
                     page.execute(&format!(
                         "document.activeElement && document.activeElement.dispatchEvent(new KeyboardEvent('keypress', {{key: '{}'}}))",
                         ch
                     )).await;
-                    tokio::time::sleep(Duration::from_millis(delay)).await;
+                    tokio::time::sleep(super::humanized_keystroke_delay(base_ms)).await;
                 }
                 Ok(vec![])
             }
