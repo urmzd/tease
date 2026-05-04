@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.20.1 (2026-05-04)
+
+### Bug Fixes
+
+- **core**: force chromium viewport to match configured dimensions ([411f613](https://github.com/urmzd/teasr/commit/411f6131e2b001264fc19fafaeeda5bf04b5c90f))
+
+[Full Changelog](https://github.com/urmzd/teasr/compare/v0.20.0...v0.20.1)
+
+
 ## 0.20.0 (2026-04-26)
 
 ### Features
