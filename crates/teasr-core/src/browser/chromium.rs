@@ -2,6 +2,7 @@
 
 use anyhow::{Context, Result};
 use chromiumoxide::browser::{Browser, BrowserConfig};
+use chromiumoxide::cdp::browser_protocol::emulation::SetDeviceMetricsOverrideParams;
 use chromiumoxide::cdp::browser_protocol::input::{
     DispatchMouseEventParams, DispatchMouseEventType,
 };
@@ -15,6 +16,8 @@ use super::{BrowserEngine, BrowserPage, LaunchOptions};
 pub struct ChromiumEngine {
     inner: Browser,
     handler: Option<JoinHandle<()>>,
+    width: u32,
+    height: u32,
 }
 
 struct ChromiumPage {
@@ -44,6 +47,8 @@ impl ChromiumEngine {
         Ok(Self {
             inner: browser,
             handler: Some(handle),
+            width: opts.width,
+            height: opts.height,
         })
     }
 }
@@ -56,6 +61,14 @@ impl BrowserEngine for ChromiumEngine {
             .new_page(url)
             .await
             .context("failed to create page")?;
+        page.execute(SetDeviceMetricsOverrideParams::new(
+            self.width as i64,
+            self.height as i64,
+            1.0,
+            false,
+        ))
+        .await
+        .context("failed to override device metrics")?;
         Ok(Box::new(ChromiumPage { inner: page }))
     }
 

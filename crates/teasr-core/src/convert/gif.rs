@@ -81,11 +81,8 @@ pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path, config: &GifConf
             .pixels()
             .map(|p| rgb::RGBA8::new(p[0], p[1], p[2], p[3]))
             .collect();
-        let img_frame = imgref::ImgVec::new(
-            pixels.clone(),
-            max_width as usize,
-            max_height as usize,
-        );
+        let img_frame =
+            imgref::ImgVec::new(pixels.clone(), max_width as usize, max_height as usize);
         collector
             .add_frame_rgba(i, img_frame, timestamp)
             .with_context(|| format!("failed to add frame {i}"))?;
@@ -99,11 +96,7 @@ pub fn frames_to_gif(frames: &[CapturedFrame], gif_path: &Path, config: &GifConf
     // The first closes out the real last frame's intended duration; the second
     // pulls gifski's trailing-delay heuristic down to 10 ms before the loop.
     if let Some(pixels) = last_canvas_pixels {
-        let img_a = imgref::ImgVec::new(
-            pixels.clone(),
-            max_width as usize,
-            max_height as usize,
-        );
+        let img_a = imgref::ImgVec::new(pixels.clone(), max_width as usize, max_height as usize);
         collector
             .add_frame_rgba(merged.len(), img_a, timestamp)
             .context("failed to add trailing sentinel frame")?;
